@@ -1,0 +1,90 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class FirebaseServices {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Future<String> signIn(String email, String password) async {
+    try {
+      final UserCredential userCredential = await _auth
+          .signInWithEmailAndPassword(email: email, password: password);
+      return userCredential.user!.uid;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+        throw Exception('Invalid email or password');
+      }
+      rethrow;
+    }
+  }
+
+  Future<String> createAccount(
+    String email,
+    String password,
+    String name,
+    String role,
+  ) async {
+    try {
+      // 1. Create auth user
+      final UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(email: email, password: password);
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        // 2. Create user document in Firestore
+        await _firestore.collection('users').doc(user.uid).set({
+          'name': name,
+          'email': email,
+          'role': role, // 'home' or 'store'
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+        return user.uid;
+      } else {
+        throw Exception('User creation failed');
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'email-already-in-use') {
+        throw Exception('Email already in use');
+      } else if (e.code == 'invalid-email') {
+        throw Exception('Invalid email');
+      } else if (e.code == 'weak-password') {
+        throw Exception('Password too weak');
+      }
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getUserProfile() async {
+    final User? user = _auth.currentUser;
+    if (user == null) return null;
+
+    final DocumentSnapshot doc = await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    return doc.exists ? doc.data() as Map<String, dynamic> : null;
+  }
+
+  Future<void> signOut() async {
+    await _auth.signOut();
+  }
+
+  Future<void> resetPassword(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        throw Exception('No account found for this email');
+      } else if (e.code == 'invalid-email') {
+        throw Exception('Invalid email address');
+      }
+      rethrow;
+    }
+  }
+
+  Stream<User?> authStateChanges() {
+    return _auth.authStateChanges();
+  }
+}

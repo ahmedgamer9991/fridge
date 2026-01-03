@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "642470680316",
+    "project_id": "smort-fridge",
+    "storage_bucket": "smort-fridge.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:642470680316:android:745c5b115e990a7115a979",
+        "android_client_info": {
+          "package_name": "com.example.fridge"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANy4XABNdzpGOZeR-bfvVjrK5qVvWb_LM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

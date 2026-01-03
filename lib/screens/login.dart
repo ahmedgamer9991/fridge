@@ -1,0 +1,215 @@
+import 'package:flutter/material.dart';
+import 'package:fridge/utils/constants.dart';
+import 'package:fridge/screens/widgets.dart';
+import '../services/firebase_services.dart';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  final _focusNode1 = FocusNode();
+  final _focusNode2 = FocusNode();
+
+  bool _isEmailValid = true;
+  bool _isPasswordValid = true;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _focusNode1.dispose();
+    _focusNode2.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        title: const Text('Log In'),
+        elevation: .5,
+        shadowColor: .fromRGBO(0, 0, 0, 1),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 30),
+              // App Title
+              Center(
+                child: Text(
+                  'FridgeMate',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 50),
+
+              // Email Field
+              myTextForm(
+                title: 'Email',
+                focusNode: _focusNode1,
+                onTapOutside: (event) => _focusNode1.unfocus(),
+                controller: _emailController,
+                errorText: _isEmailValid ? null : 'Please enter a valid email',
+                hintText: 'Enter your email',
+                icon: Icons.email_outlined,
+                onChanged: (value) {
+                  setState(() {
+                    _isEmailValid = RegExp(
+                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                    ).hasMatch(value);
+                  });
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              // Password Field
+              myTextForm(
+                title: 'Password',
+                focusNode: _focusNode2,
+                onTapOutside: (event) => _focusNode2.unfocus(),
+                controller: _passwordController,
+                errorText: _isPasswordValid
+                    ? null
+                    : 'Password must be at least 6 characters',
+                hintText: 'Enter your password',
+                icon: Icons.lock_outline,
+                obscureText: true,
+                onChanged: (value) {
+                  setState(() {
+                    _isPasswordValid = value.length >= 6;
+                  });
+                },
+              ),
+              const SizedBox(height: 32),
+
+              // Log In Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isEmailValid && _isPasswordValid && !_isLoading
+                      ? () async {
+                          setState(() {
+                            _isLoading = true;
+                          });
+                          try {
+                            // TODO: Handle login logic
+                            await FirebaseServices().signIn(
+                              _emailController.text.trim(),
+                              _passwordController.text.trim(),
+                            );
+                            // ✅ Check if email is verified
+                            // final isVerified = await FirebaseServices()
+                            //     .isEmailVerified();
+
+                            // if (isVerified) {
+                            if (mounted) {
+                              Navigator.pop(context);
+                            }
+                            // } else {
+                            // Navigator.popUntil(context, (route) => route.isFirst);
+                            // }
+                            // ScaffoldMessenger.of(context).showSnackBar(
+                            //   const SnackBar(content: Text('Logging in...')),
+                            // );
+                          } catch (e) {
+                            if (mounted) {
+                              setState(() {
+                                _isLoading = false;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: ${e.toString()}'),
+                                ),
+                              );
+                            }
+                          }
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorsPrimary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 24,
+                    ),
+                    elevation: 0,
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text(
+                          'Log In',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
+                        ),
+                ),
+              ),
+
+              // Forgot Password & Create Account Links
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.center,
+                child: Column(
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/reset-password');
+                      },
+                      child: Text(
+                        'Forgot password?',
+                        style: TextStyle(fontSize: 16, color: colorsPrimary),
+                      ),
+                    ),
+                    // const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () {
+                        // TODO: Navigate to signup screen
+                        Navigator.pushReplacementNamed(context, '/signup');
+                      },
+                      child: Text(
+                        'Create new account',
+                        style: TextStyle(fontSize: 16, color: colorsPrimary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
