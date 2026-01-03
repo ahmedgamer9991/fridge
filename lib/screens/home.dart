@@ -117,6 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        constraints: BoxConstraints(maxWidth: 400),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
