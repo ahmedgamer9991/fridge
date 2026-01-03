@@ -30,7 +30,17 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
+/build/.cxx
+/build/.cxx/debug
+/build/.cxx/release
+/build/95c87eaef9b844e475ae4b06efb784c1
+/build/8412888a1308d72c2aa1a8ffaedafc0e
+/build/app
+/build/cloud_firestore
+/build/firebase_auth
+/build/firebase_core
+/build/native_hooks
+/build/reports
 /coverage/
 
 # Symbolication related
