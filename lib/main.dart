@@ -6,7 +6,7 @@ import 'package:fridge/root.dart';
 import 'package:fridge/screens/add_item.dart';
 import 'package:fridge/screens/edit_item.dart';
 import 'package:fridge/screens/home.dart';
-import 'package:fridge/screens/item-details.dart';
+import 'package:fridge/screens/item_details.dart';
 import 'package:fridge/screens/login.dart';
 import 'package:fridge/screens/reset_password.dart';
 import 'package:fridge/screens/signup.dart';
@@ -16,11 +16,11 @@ import 'package:fridge/services/firebase_services.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const fridge());
+  runApp(const Fridge());
 }
 
-class fridge extends StatelessWidget {
-  const fridge({super.key});
+class Fridge extends StatelessWidget {
+  const Fridge({super.key});
 
   @override
   Widget build(BuildContext context) {

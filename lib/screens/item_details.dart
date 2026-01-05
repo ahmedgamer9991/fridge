@@ -1,7 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fridge/services/firebase_services.dart';
 import 'package:fridge/utils/constants.dart';
+import 'package:fridge/widgets/widgets.dart';
+import 'package:fridge/utils/helpers.dart';
+import 'package:fridge/models/inventory_item.dart';
 
 class ItemDetailsScreen extends StatefulWidget {
   const ItemDetailsScreen({super.key});
@@ -12,7 +14,7 @@ class ItemDetailsScreen extends StatefulWidget {
 
 class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   late String _itemId;
-  Map<String, dynamic>? _itemData;
+  InventoryItem? _itemData;
   bool _isLoading = true;
   bool _hasError = false;
   // late bool updated;
@@ -32,7 +34,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is String) {
         _itemId = args;
-        final item = await FirebaseServices().getItemById(_itemId);
+        final item = await FirebaseServices().getItem(_itemId);
 
         if (mounted) {
           setState(() {
@@ -58,17 +60,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        title: Text(
-          _itemData?['name'] ?? 'Item Details',
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
+      appBar: AppHeader(
+        title: _itemData?.name ?? 'Item Details',
         // actions: [
         //   PopupMenuButton<String>(
         //     icon: const Icon(Icons.more_vert, color: Colors.black),
@@ -85,8 +78,6 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
         //     ],
         //   ),
         // ],
-        elevation: .5,
-        shadowColor: Colors.black,
       ),
       body: SafeArea(child: _buildBody()),
     );
@@ -171,7 +162,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
       decoration: BoxDecoration(
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorsBorder!),
+        border: Border.all(color: colorsBorder),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -188,38 +179,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   }
 
   Widget _buildProductDetails() {
-    final status = _itemData?['status'] as String? ?? 'Fresh';
-    Color statusColor;
-    // String statusText;
-    // switch (status) {
-    //   case 'Fresh':
-    //     statusColor = const Color(0xFF2E7D32);
-    //     break;
-    //   case 'Expiring Soon':
-    // statusColor = const Color(0xFFFF6F00);
-    //     break;
-    //   case 'Spoiled':
-    //     statusColor = const Color(0xFFD32F2F);
-    //     break;
-    //   default:
-    //     statusColor = Colors.grey;
-    // }
-    switch (status) {
-      case 'Expiring Soon':
-        statusColor = const Color(0xFFFFA726);
-        // statusText = 'Expiring Soon';
-        break;
-      case 'Spoiled':
-        statusColor = const Color(0xFFD32F2F);
-        // statusText = 'Spoiled';
-        break;
-      case 'Fresh':
-        statusColor = const Color(0xFF2E7D32);
-        break;
-      default:
-        statusColor = Colors.grey;
-      // statusText = 'Fresh';
-    }
+    final status = _itemData?.status ?? 'Fresh';
+    Color statusColor = AppHelpers.getStatusColor(status);
 
     return Container(
       decoration: BoxDecoration(
@@ -244,7 +205,14 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                 height: 1.2,
               ),
               children: [
-                TextSpan(text: _itemData?['name'] as String? ?? 'Unnamed Item'),
+                TextSpan(
+                  text: _itemData?.name ?? 'Loading...',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    height: 1.2,
+                  ),
+                ),
                 WidgetSpan(
                   alignment: .middle,
                   child: Container(
@@ -270,6 +238,11 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            '${_itemData?.quantity ?? ''} ${_itemData?.unit ?? ''}',
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
+          ),
           const SizedBox(height: 24),
           _buildProductDetailsCard(),
         ],
@@ -278,21 +251,15 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   }
 
   Widget _buildProductDetailsCard() {
-    final expiryDate = _itemData?['expiryDate'] as Timestamp?;
-    String expiryText = 'No expiry date';
-
-    if (expiryDate != null) {
-      final date = expiryDate.toDate();
-      expiryText = '${date.day}/${date.month}/${date.year}';
-    }
+    final expiryDate = _itemData?.expiryDate;
+    String expiryText = AppHelpers.formatExpiryDate(expiryDate);
 
     return Column(
       children: [
         _buildDetailRow(
           icon: Icons.scale,
           label: 'Quantity',
-          value:
-              '${_itemData?['quantity'] ?? 1} ${_itemData?['unit'] ?? 'units'}',
+          value: '${_itemData?.quantity ?? 1} ${_itemData?.unit ?? 'units'}',
         ),
         const Divider(height: 15, thickness: .5),
         SizedBox(height: 15),
@@ -304,9 +271,16 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
         const Divider(height: 15, thickness: .5),
         SizedBox(height: 15),
         _buildDetailRow(
+          icon: Icons.add_box_outlined,
+          label: 'Added On',
+          value: _formatDate(_itemData?.createdAt),
+        ),
+        const Divider(height: 15, thickness: .5),
+        SizedBox(height: 15),
+        _buildDetailRow(
           icon: Icons.category,
           label: 'Category',
-          value: _itemData?['category'] as String? ?? 'Uncategorized',
+          value: _itemData?.category ?? 'Uncategorized',
         ),
         const Divider(height: 15, thickness: .5),
         SizedBox(height: 40),
@@ -320,7 +294,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     required String value,
   }) {
     return Row(
-      mainAxisAlignment: .spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
@@ -328,7 +302,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
             const SizedBox(width: 10),
             Text(
               label,
-              style: const TextStyle(fontSize: 16, fontWeight: .w500),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -359,14 +333,14 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
             backgroundColor: colorsPrimary,
             icon: Icons.edit_outlined,
             onPressed: () async {
-              Map<String, dynamic> items = {"id": _itemId, ..._itemData!};
-              final updated = await Navigator.pushNamed(
+              Navigator.pushNamed(
                 context,
                 '/edit-item',
-                arguments: items, //todo itemData
-              );
-              // print(updated);
-              if (updated == true) _loadItemData();
+                arguments: _itemData?.id,
+              ).then((_) {
+                // Reload item data when coming back from edit screen
+                _loadItemData();
+              });
             },
             textColor: Colors.black,
             title: "Edit Item",
@@ -376,7 +350,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
           // Mark as Consumed Button
           _actionButton(
             onPressed: () {
-              _updateItemStatus("consumed");
+              _updateItemStatus("Consumed");
             },
             backgroundColor: Colors.white,
             icon: Icons.check_box_outlined,
@@ -388,12 +362,12 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
           // Mark as Thrown Away Button
           _actionButton(
             onPressed: () {
-              _updateItemStatus("thrown_away");
+              _updateItemStatus("Thrown Away");
             },
             backgroundColor: Colors.white,
             icon: Icons.delete,
             textColor: Colors.black,
-            title: "Mark as Trown Away",
+            title: "Mark as Thrown Away",
           ),
           const SizedBox(height: 12),
 
@@ -402,7 +376,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
             onPressed: () {
               _showDeleteConfirmation();
             },
-            backgroundColor: const Color(0xFFD32F2F),
+            backgroundColor: statusSpoiled,
             icon: Icons.cancel_outlined,
             textColor: Colors.white,
             title: "Delete Item",
@@ -426,7 +400,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           side: backgroundColor == Colors.white
-              ? BorderSide(color: colorsBorder!)
+              ? BorderSide(color: colorsBorder)
               : null,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -455,26 +429,26 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     );
   }
 
-  void _updateItemStatus(String status) {
-    FirebaseServices()
-        .updateItem(_itemId, {
-          'status': status,
-          'updatedAt': FieldValue.serverTimestamp(),
-        })
-        .then((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Item marked as $status'),
-              backgroundColor: colorsPrimary,
-            ),
-          );
-          Navigator.pop(context);
-        })
-        .catchError((error) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: $error')));
-        });
+  Future<void> _updateItemStatus(String status) async {
+    if (_itemData == null) return;
+    try {
+      final updatedItem = _itemData!.copyWith(status: status);
+      await FirebaseServices().updateItem(updatedItem);
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Item marked as $status'),
+          backgroundColor: colorsPrimary,
+        ),
+      );
+      Navigator.pop(context);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $error')));
+    }
   }
 
   void _showDeleteConfirmation() {
@@ -495,21 +469,20 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
               Navigator.pop(dialogContext); // Close dialog
               try {
                 await FirebaseServices().deleteItem(_itemId);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Item deleted successfully'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                  Navigator.pop(context);
-                }
+                if (!mounted) return;
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Item deleted successfully'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+                Navigator.pop(context);
               } catch (error) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Delete failed: $error')),
-                  );
-                }
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Delete failed: $error')),
+                );
               }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
@@ -517,5 +490,10 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
         ],
       ),
     );
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'N/A';
+    return '${date.day}/${date.month}/${date.year}';
   }
 }

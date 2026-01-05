@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fridge/utils/constants.dart';
-import 'package:fridge/screens/widgets.dart';
+import 'package:fridge/widgets/widgets.dart';
 import '../services/firebase_services.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -35,13 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        title: const Text('Log In'),
-        elevation: .5,
-        shadowColor: .fromRGBO(0, 0, 0, 1),
-      ),
+      appBar: AppHeader(title: 'Log In'),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -63,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 50),
 
               // Email Field
-              myTextForm(
+              AppTextFormField(
                 title: 'Email',
                 focusNode: _focusNode1,
                 onTapOutside: (event) => _focusNode1.unfocus(),
@@ -83,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 20),
 
               // Password Field
-              myTextForm(
+              AppTextFormField(
                 title: 'Password',
                 focusNode: _focusNode2,
                 onTapOutside: (event) => _focusNode2.unfocus(),
@@ -105,8 +99,10 @@ class _LoginScreenState extends State<LoginScreen> {
               // Log In Button
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isEmailValid && _isPasswordValid && !_isLoading
+                child: AppButton(
+                  text: 'Log In',
+                  isLoading: _isLoading,
+                  onPressed: _isEmailValid && _isPasswordValid
                       ? () async {
                           setState(() {
                             _isLoading = true;
@@ -122,9 +118,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             //     .isEmailVerified();
 
                             // if (isVerified) {
-                            if (mounted) {
-                              Navigator.pop(context);
-                            }
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
                             // } else {
                             // Navigator.popUntil(context, (route) => route.isFirst);
                             // }
@@ -132,48 +127,16 @@ class _LoginScreenState extends State<LoginScreen> {
                             //   const SnackBar(content: Text('Logging in...')),
                             // );
                           } catch (e) {
-                            if (mounted) {
-                              setState(() {
-                                _isLoading = false;
-                              });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Error: ${e.toString()}'),
-                                ),
-                              );
-                            }
+                            if (!context.mounted) return;
+                            setState(() {
+                              _isLoading = false;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: ${e.toString()}')),
+                            );
                           }
                         }
                       : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorsPrimary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 24,
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : const Text(
-                          'Log In',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
-                          ),
-                        ),
                 ),
               ),
 

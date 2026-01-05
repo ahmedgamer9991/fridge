@@ -38,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     'Our Motto',
                     style: TextStyle(
                       fontSize: 16,
-                      color: const Color(0xFF666666),
+                      color: colorsSecondary,
                       fontWeight: .w400,
                     ),
                   ),
@@ -122,9 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(
-            color: isSelected
-                ? colorsPrimary
-                : const Color(0xFFE0E0E0),
+            color: isSelected ? colorsPrimary : colorsBorder,
             width: 1.7,
           ),
           borderRadius: BorderRadius.circular(12),
@@ -145,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               description,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: const Color(0xFF666666)),
+              style: TextStyle(fontSize: 14, color: colorsSecondary),
             ),
           ],
         ),

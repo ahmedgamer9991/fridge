@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fridge/utils/constants.dart';
+import 'package:fridge/widgets/widgets.dart';
 
 class GroceryScreen extends StatefulWidget {
   const GroceryScreen({super.key});
@@ -63,10 +64,8 @@ class _GroceryScreenState extends State<GroceryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Grocery List'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+      appBar: AppHeader(
+        title: 'Grocery List',
         automaticallyImplyLeading: false,
         actions: [
           IconButton(icon: const Icon(Icons.share_outlined), onPressed: () {}),
@@ -75,8 +74,6 @@ class _GroceryScreenState extends State<GroceryScreen> {
             onPressed: () {},
           ),
         ],
-        elevation: .5,
-        shadowColor: .fromRGBO(0, 0, 0, 1),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -94,7 +91,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
                 ),
               ),
               const SizedBox(height: 14),
-              ..._favoriteMealItems.map(_buildGroceryItem).toList(),
+              ..._favoriteMealItems.map(_buildGroceryItem),
               const SizedBox(height: 20),
 
               // Section 2: Fridge items that are low-stock
@@ -107,7 +104,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
                 ),
               ),
               const SizedBox(height: 14),
-              ..._lowStockItems.map(_buildGroceryItem).toList(),
+              ..._lowStockItems.map(_buildGroceryItem),
             ],
           ),
         ),
@@ -122,7 +119,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
       shadowColor: Color.fromRGBO(0, 0, 0, 1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colorsBorder!),
+        side: BorderSide(color: colorsBorder),
       ),
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -141,7 +138,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
           checkColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(4),
-            side: BorderSide(color: colorsBorder!),
+            side: BorderSide(color: colorsBorder),
           ),
         ),
         title: Row(

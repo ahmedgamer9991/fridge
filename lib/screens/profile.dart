@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fridge/services/firebase_services.dart';
 import 'package:fridge/utils/constants.dart';
+import 'package:fridge/widgets/widgets.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -70,14 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        automaticallyImplyLeading: false,
-        elevation: .5,
-        shadowColor: .fromRGBO(0, 0, 0, 1),
-      ),
+      appBar: AppHeader(title: 'Profile', automaticallyImplyLeading: false),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
@@ -90,7 +84,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: colorsBorder!, width: .5),
+                  side: BorderSide(color: colorsBorder, width: .5),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -118,7 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               // Optional: Add border
                               // foregroundDecoration: BoxDecoration(
                               //   shape: BoxShape.circle,
-                              //   border: Border.all(color: colorsBorder!, width: 2),
+                              //   border: Border.all(color: colorsBorder, width: 2),
                               // ),
                             ),
                             const SizedBox(height: 5),
@@ -332,7 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     await FirebaseServices().signOut();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD32F2F),
+                    backgroundColor: statusSpoiled,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -464,7 +458,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   divisions: (max - min).toInt(),
                   label: '${value.toInt()} $unit',
                   activeColor: colorsPrimary,
-                  inactiveColor: colorsBorder!,
+                  inactiveColor: colorsBorder,
                   onChanged: onChanged,
                 ),
               ),
@@ -509,15 +503,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             fillColor: Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colorsBorder!),
+              borderSide: BorderSide(color: colorsBorder),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colorsBorder!),
+              borderSide: BorderSide(color: colorsBorder),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colorsBorder!),
+              borderSide: BorderSide(color: colorsBorder),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
@@ -562,7 +556,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       trailing: SizedBox(
         width: 140,
         child: DropdownButtonFormField<String>(
-          value: value,
+          initialValue: value,
           items: items.map((item) {
             return DropdownMenuItem<String>(value: item, child: Text(item));
           }).toList(),
@@ -572,15 +566,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             fillColor: Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colorsBorder!),
+              borderSide: BorderSide(color: colorsBorder),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colorsBorder!),
+              borderSide: BorderSide(color: colorsBorder),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colorsBorder!),
+              borderSide: BorderSide(color: colorsBorder),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
@@ -628,15 +622,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               fillColor: Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: colorsBorder!),
+                borderSide: BorderSide(color: colorsBorder),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: colorsBorder!),
+                borderSide: BorderSide(color: colorsBorder),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: colorsBorder!),
+                borderSide: BorderSide(color: colorsBorder),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 12,

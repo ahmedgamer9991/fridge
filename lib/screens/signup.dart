@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fridge/screens/widgets.dart';
+import 'package:fridge/widgets/widgets.dart';
 import 'package:fridge/utils/constants.dart';
 import '../services/firebase_services.dart';
 
@@ -41,13 +41,7 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        title: const Text('Sign Up'),
-        elevation: .5,
-        shadowColor: .fromRGBO(0, 0, 0, 1),
-      ),
+      appBar: AppHeader(title: 'Sign Up'),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -69,7 +63,7 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 50),
 
               // Name Field
-              myTextForm(
+              AppTextFormField(
                 title: 'Name',
                 focusNode: _focusNode1,
                 onTapOutside: (event) => _focusNode1.unfocus(),
@@ -86,7 +80,7 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 20),
 
               // Email Field
-              myTextForm(
+              AppTextFormField(
                 title: 'Email',
                 focusNode: _focusNode2,
                 onTapOutside: (event) => _focusNode2.unfocus(),
@@ -105,7 +99,7 @@ class _SignupScreenState extends State<SignupScreen> {
               const SizedBox(height: 20),
 
               // Password Field
-              myTextForm(
+              AppTextFormField(
                 title: 'Password',
                 focusNode: _focusNode3,
                 onTapOutside: (event) => _focusNode3.unfocus(),
@@ -137,25 +131,27 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  RadioGroup<String>(
-                    groupValue: _selectedRole,
-                    onChanged: (value) => setState(() => _selectedRole = value),
-                    child: Column(
-                      children: [
-                        RadioListTile<String>(
-                          title: const Text('I\'m a Home User'),
-                          value: 'home',
-                          activeColor: colorsPrimary,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        RadioListTile<String>(
-                          title: const Text('I\'m a Store Manager'),
-                          value: 'store',
-                          activeColor: colorsPrimary,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                      ],
-                    ),
+                  Column(
+                    children: [
+                      RadioListTile<String>(
+                        title: const Text('I\'m a Home User'),
+                        value: 'home',
+                        groupValue: _selectedRole,
+                        onChanged: (value) =>
+                            setState(() => _selectedRole = value),
+                        activeColor: colorsPrimary,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      RadioListTile<String>(
+                        title: const Text('I\'m a Store Manager'),
+                        value: 'store',
+                        groupValue: _selectedRole,
+                        onChanged: (value) =>
+                            setState(() => _selectedRole = value),
+                        activeColor: colorsPrimary,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -164,13 +160,14 @@ class _SignupScreenState extends State<SignupScreen> {
               // Sign Up Button
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: AppButton(
+                  text: 'Sign Up',
+                  isLoading: _isLoading,
                   onPressed:
                       _isNameValid &&
                           _isEmailValid &&
                           _isPasswordValid &&
-                          _selectedRole != null &&
-                          !_isLoading
+                          _selectedRole != null
                       ? () async {
                           setState(() {
                             _isLoading = true;
@@ -186,9 +183,8 @@ class _SignupScreenState extends State<SignupScreen> {
                             // ✅ Send verification email automatically
                             await FirebaseServices().sendEmailVerification();
 
-                            if (mounted) {
-                              Navigator.pop(context);
-                            }
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
 
                             // ✅ Navigate to verification screen instead of app
                             // Navigator.popUntil(context, (route) => route.isFirst);
@@ -205,41 +201,13 @@ class _SignupScreenState extends State<SignupScreen> {
                                 _isLoading = false;
                               });
                             }
+                            if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('Error: ${e.toString()}')),
                             );
                           }
                         }
                       : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(0, 200, 83, 1),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 24,
-                    ),
-                    elevation: 1,
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : const Text(
-                          'Sign Up',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
-                          ),
-                        ),
                 ),
               ),
             ],

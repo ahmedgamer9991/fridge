@@ -1,8 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:fridge/screens/widgets.dart';
+import 'package:fridge/widgets/widgets.dart';
 import 'package:fridge/services/firebase_services.dart';
 import 'package:fridge/utils/constants.dart';
+import 'package:fridge/models/inventory_item.dart';
 
 class EditItemScreen extends StatefulWidget {
   const EditItemScreen({super.key});
@@ -13,7 +13,8 @@ class EditItemScreen extends StatefulWidget {
 
 class _EditItemScreenState extends State<EditItemScreen> {
   // late String _itemId;
-  Map<String, dynamic>? _itemData;
+  InventoryItem? _itemData;
+
   bool _isLoading = true;
   bool _hasError = false;
   final TextEditingController _nameController = TextEditingController();
@@ -24,25 +25,6 @@ class _EditItemScreenState extends State<EditItemScreen> {
   String? _selectedCategory;
   String? _selectedUnit;
   DateTime? _selectedExpiryDate;
-
-  final List<String> _categories = [
-    'Produce',
-    'Dairy',
-    'Meat',
-    'Frozen',
-    'Pantry',
-    'Beverage',
-  ];
-  final List<String> _units = [
-    'units',
-    'g',
-    'kg',
-    'ml',
-    'L',
-    'oz',
-    'lb',
-    'pack',
-  ];
 
   @override
   void dispose() {
@@ -57,55 +39,45 @@ class _EditItemScreenState extends State<EditItemScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (mounted) {
-      _loadItemData();
-    }
-  });
+      if (mounted) {
+        _loadItemData();
+      }
+    });
   }
 
-  void _loadItemData(){
-  try {
-    // Get item ID from navigation arguments (now safe to access)
-    final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is Map<String, dynamic>) {
-      _itemData = args;
-      
-      // Get item ONCE (not a stream)
-      // final item = await FirebaseServices().getItemById(_itemId);
-      
+  Future<void> _loadItemData() async {
+    try {
+      // Get item ID from navigation arguments
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is String) {
+        final item = await FirebaseServices().getItem(args);
+
+        if (mounted) {
+          setState(() {
+            _itemData = item;
+            _isLoading = false;
+            // Initialize form controllers with loaded data
+            _initFormControllers(_itemData!);
+          });
+        }
+      }
+    } catch (e) {
       if (mounted) {
         setState(() {
-          // _itemData = item;
           _isLoading = false;
-          // Initialize form controllers with loaded data
-          _initFormControllers(_itemData!);
+          _hasError = true;
+          debugPrint('Error loading item: $e');
         });
       }
-    } else {
-      throw Exception('Invalid navigation arguments');
-    }
-  } catch (e) {
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-        _hasError = true;
-        debugPrint('Error loading item: $e');
-      });
     }
   }
-}
 
-  void _initFormControllers(Map<String, dynamic> item) {
-    _nameController.text = item['name']?.toString() ?? '';
-    _quantityController.text = (item['quantity'] as int?)?.toString() ?? '1';
-    _selectedCategory = item['category']?.toString() ?? _categories[0];
-    _selectedUnit = item['unit']?.toString() ?? _units[0];
-
-    if (item['expiryDate'] is Timestamp) {
-      _selectedExpiryDate = (item['expiryDate'] as Timestamp).toDate();
-    } else if (item['expiryDate'] is DateTime) {
-      _selectedExpiryDate = item['expiryDate'] as DateTime;
-    }
+  void _initFormControllers(InventoryItem item) {
+    _nameController.text = item.name;
+    _quantityController.text = item.quantity;
+    _selectedCategory = item.category;
+    _selectedUnit = item.unit;
+    _selectedExpiryDate = item.expiryDate;
   }
 
   @override
@@ -115,13 +87,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
     if (_itemData == null) return const Center(child: Text('Item not found'));
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        title: const Text('Edit Item'),
-        elevation: .5,
-        shadowColor: Colors.black,
-      ),
+      appBar: AppHeader(title: 'Edit Item'),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
@@ -136,7 +102,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                   height: 150,
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
-                    border: Border.all(color: colorsBorder!),
+                    border: Border.all(color: colorsBorder),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
@@ -160,7 +126,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
               const SizedBox(height: 24),
 
               // Item Name Input
-              myTextForm(
+              AppTextFormField(
                 title: 'Item Name',
                 focusNode: _focusNode1,
                 onTapOutside: (event) => _focusNode1.unfocus(),
@@ -184,7 +150,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     initialValue: _selectedCategory,
-                    items: _categories.map((category) {
+                    items: itemCategories.map((category) {
                       return DropdownMenuItem(
                         value: category,
                         child: Text(category),
@@ -237,21 +203,21 @@ class _EditItemScreenState extends State<EditItemScreen> {
                                 left: Radius.circular(20),
                                 right: Radius.circular(8),
                               ),
-                              borderSide: BorderSide(color: colorsBorder!),
+                              borderSide: BorderSide(color: colorsBorder),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.horizontal(
                                 left: Radius.circular(20),
                                 right: Radius.circular(8),
                               ),
-                              borderSide: BorderSide(color: colorsBorder!),
+                              borderSide: BorderSide(color: colorsBorder),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.horizontal(
                                 left: Radius.circular(20),
                                 right: Radius.circular(8),
                               ),
-                              borderSide: BorderSide(color: colorsBorder!),
+                              borderSide: BorderSide(color: colorsBorder),
                             ),
                             hintText: 'e.g., 3',
                             // contentPadding: const EdgeInsets.symmetric(
@@ -266,7 +232,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           initialValue: _selectedUnit,
-                          items: _units.map((unit) {
+                          items: itemUnits.map((unit) {
                             return DropdownMenuItem(
                               value: unit,
                               child: Text(unit),
@@ -282,21 +248,21 @@ class _EditItemScreenState extends State<EditItemScreen> {
                                 left: Radius.circular(8),
                                 right: Radius.circular(20),
                               ),
-                              borderSide: BorderSide(color: colorsBorder!),
+                              borderSide: BorderSide(color: colorsBorder),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.horizontal(
                                 left: Radius.circular(8),
                                 right: Radius.circular(20),
                               ),
-                              borderSide: BorderSide(color: colorsBorder!),
+                              borderSide: BorderSide(color: colorsBorder),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.horizontal(
                                 left: Radius.circular(8),
                                 right: Radius.circular(20),
                               ),
-                              borderSide: BorderSide(color: colorsBorder!),
+                              borderSide: BorderSide(color: colorsBorder),
                             ),
                             hintText: 'Select Unit',
                             // contentPadding: const EdgeInsets.symmetric(
@@ -386,51 +352,13 @@ class _EditItemScreenState extends State<EditItemScreen> {
                 crossAxisAlignment: .stretch,
                 children: [
                   // Save Button
-                  ElevatedButton(
-                    onPressed: () => _saveItem(_itemData!),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorsPrimary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 24,
-                      ),
-                    ),
-                    child: const Text(
-                      'Save Item',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
+                  AppButton(text: 'Save Item', onPressed: _saveItem),
                   const SizedBox(height: 12),
                   // Cancel Button
-                  ElevatedButton(
+                  AppButton(
+                    text: 'Cancel',
+                    type: AppButtonType.secondary,
                     onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      side: BorderSide(color: colorsBorder!),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 24,
-                      ),
-                    ),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -441,7 +369,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
     );
   }
 
-  void _saveItem(Map<String, dynamic> originalItem) {
+  Future<void> _saveItem() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(
@@ -450,35 +378,29 @@ class _EditItemScreenState extends State<EditItemScreen> {
       return;
     }
 
-    // Prepare updates (same logic as before)
-    final updates = <String, dynamic>{
-      if (_nameController.text.trim() != (originalItem['name'] as String))
-        'name': _nameController.text.trim(),
-      if (_selectedCategory != (originalItem['category'] as String?))
-        'category': _selectedCategory,
-      if (_quantityController.text !=
-          (originalItem['quantity'] as int).toString())
-        'quantity': int.tryParse(_quantityController.text) ?? 1,
-      if (_selectedUnit != (originalItem['unit'] as String?))
-        'unit': _selectedUnit,
-      if (_selectedExpiryDate?.millisecondsSinceEpoch !=
-          (originalItem['expiryDate'] as Timestamp?)?.millisecondsSinceEpoch)
-        'expiryDate': _selectedExpiryDate,
-    };
+    if (_itemData == null) return;
 
-    // Update using _itemId (which we have from arguments)
-    FirebaseServices()
-        .updateItem(_itemData!["id"] as String, updates)
-        .then((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Item updated successfully!')),
-          );
-          Navigator.pop(context, true);
-        })
-        .catchError((error) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: $error')));
-        });
+    final updatedItem = _itemData!.copyWith(
+      name: name,
+      quantity: _quantityController.text,
+      unit: _selectedUnit,
+      category: _selectedCategory,
+      expiryDate: _selectedExpiryDate,
+    );
+
+    try {
+      await FirebaseServices().updateItem(updatedItem);
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Item updated successfully!')),
+      );
+      Navigator.pop(context, true);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $error')));
+    }
   }
 }

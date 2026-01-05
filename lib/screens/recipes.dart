@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fridge/utils/constants.dart';
+import 'package:fridge/widgets/widgets.dart';
 
 class RecipesScreen extends StatefulWidget {
   const RecipesScreen({super.key});
@@ -63,14 +64,10 @@ class _RecipesScreenState extends State<RecipesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Search Recipes...'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+      appBar: AppHeader(
+        title: 'Search Recipes...',
         actions: [IconButton(icon: const Icon(Icons.search), onPressed: () {})],
         automaticallyImplyLeading: false,
-        elevation: .5,
-        shadowColor: .fromRGBO(0, 0, 0, 1),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -84,7 +81,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: colorsBorder!),
+                  border: Border.all(color: colorsBorder),
                 ),
                 child: Row(
                   spacing: 5,
@@ -95,15 +92,12 @@ class _RecipesScreenState extends State<RecipesScreen> {
                             setState(() => _filterMode = 'My Fridge'),
                         style: TextButton.styleFrom(
                           backgroundColor: _filterMode == 'My Fridge'
-                              ? const Color.fromARGB(255, 255, 255, 255)
+                              ? Colors.white
                               : Colors.transparent,
                           foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
                             side: _filterMode == 'My Fridge'
-                                ? BorderSide(
-                                    color: colorsBorder!,
-                                    width: .3,
-                                  )
+                                ? BorderSide(color: colorsBorder, width: .3)
                                 : BorderSide(color: Colors.transparent),
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -124,16 +118,13 @@ class _RecipesScreenState extends State<RecipesScreen> {
                             setState(() => _filterMode = 'Browse All'),
                         style: TextButton.styleFrom(
                           backgroundColor: _filterMode == 'Browse All'
-                              ? const Color.fromARGB(255, 255, 255, 255)
+                              ? Colors.white
                               : Colors.transparent,
                           foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                             side: _filterMode == 'Browse All'
-                                ? BorderSide(
-                                    color: colorsBorder!,
-                                    width: .3,
-                                  )
+                                ? BorderSide(color: colorsBorder, width: .3)
                                 : BorderSide(color: Colors.transparent),
                           ),
                           padding: const EdgeInsets.symmetric(
@@ -266,7 +257,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: colorsBorder!, width: .5),
+                      side: BorderSide(color: colorsBorder, width: .5),
                     ),
                     margin: const EdgeInsets.only(bottom: 16),
                     child: Column(

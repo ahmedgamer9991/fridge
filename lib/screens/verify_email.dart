@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fridge/services/firebase_services.dart';
+import 'package:fridge/utils/constants.dart';
+import 'package:fridge/widgets/widgets.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   const VerifyEmailScreen({super.key});
@@ -103,10 +105,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
         await FirebaseServices().signOut();
       },
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          title: const Text('Verify Email'),
+        backgroundColor: Colors.white,
+        appBar: AppHeader(
+          title: 'Verify Email',
           leading: _emailVerified
               ? null
               : IconButton(
@@ -117,8 +118,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     await FirebaseServices().signOut();
                   },
                 ),
-          elevation: .5,
-          shadowColor: .fromRGBO(0, 0, 0, 1),
         ),
         body: SafeArea(
           child: Padding(
@@ -134,9 +133,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   Icon(
                     _emailVerified ? Icons.check_circle : Icons.email_outlined,
                     size: 80,
-                    color: _emailVerified
-                        ? const Color(0xFF2E7D32)
-                        : Colors.grey[600],
+                    color: _emailVerified ? statusFresh : Colors.grey[600],
                   ),
                 const SizedBox(height: 32),
 
@@ -186,7 +183,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                       ElevatedButton(
                         onPressed: _resendVerificationEmail,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00C853),
+                          backgroundColor: colorsPrimary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             vertical: 16,

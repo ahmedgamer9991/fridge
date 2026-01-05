@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fridge/screens/widgets.dart';
+import 'package:fridge/widgets/widgets.dart';
 import 'package:fridge/services/firebase_services.dart';
 import 'package:fridge/utils/constants.dart';
 
@@ -21,32 +21,12 @@ class _AddItemScreenState extends State<AddItemScreen> {
   String? _selectedUnit;
   DateTime? _selectedExpiryDate;
 
-  final List<String> _categories = [
-    'Produce',
-    'Dairy',
-    'Meat',
-    'Frozen',
-    'Pantry',
-    'Beverage',
-  ];
-
-  final List<String> _units = [
-    'units',
-    'g',
-    'kg',
-    'ml',
-    'L',
-    'oz',
-    'lb',
-    'pack',
-  ];
-
   @override
   void initState() {
     super.initState();
     // _quantityController.text = '1';
-    _selectedCategory = _categories[0];
-    _selectedUnit = _units[0];
+    _selectedCategory = itemCategories[0];
+    _selectedUnit = itemUnits[0];
   }
 
   @override
@@ -62,12 +42,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        title: const Text('Add Item'),
-        elevation: 0,
-      ),
+      backgroundColor: Colors.white,
+      appBar: AppHeader(title: 'Add Item'),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
@@ -81,7 +57,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   height: 150,
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
-                    border: Border.all(color: colorsBorder!),
+                    border: Border.all(color: colorsBorder),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
@@ -105,7 +81,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
               const SizedBox(height: 24),
 
               // Item Name Input
-              myTextForm(
+              AppTextFormField(
                 title: 'Item Name',
                 focusNode: _focusNode1,
                 onTapOutside: (event) => _focusNode1.unfocus(),
@@ -129,7 +105,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     // initialValue: _selectedCategory,
-                    items: _categories.map((category) {
+                    items: itemCategories.map((category) {
                       return DropdownMenuItem(
                         value: category,
                         child: Text(category),
@@ -182,21 +158,21 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                 left: Radius.circular(20),
                                 right: Radius.circular(8),
                               ),
-                              borderSide: BorderSide(color: colorsBorder!),
+                              borderSide: BorderSide(color: colorsBorder),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.horizontal(
                                 left: Radius.circular(20),
                                 right: Radius.circular(8),
                               ),
-                              borderSide: BorderSide(color: colorsBorder!),
+                              borderSide: BorderSide(color: colorsBorder),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.horizontal(
                                 left: Radius.circular(20),
                                 right: Radius.circular(8),
                               ),
-                              borderSide: BorderSide(color: colorsBorder!),
+                              borderSide: BorderSide(color: colorsBorder),
                             ),
                             hintText: 'e.g., 3',
                             // contentPadding: const EdgeInsets.symmetric(
@@ -211,7 +187,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           // initialValue: "Select Unit",
-                          items: _units.map((unit) {
+                          items: itemUnits.map((unit) {
                             return DropdownMenuItem(
                               value: unit,
                               child: Text(unit),
@@ -227,21 +203,21 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                 left: Radius.circular(8),
                                 right: Radius.circular(20),
                               ),
-                              borderSide: BorderSide(color: colorsBorder!),
+                              borderSide: BorderSide(color: colorsBorder),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.horizontal(
                                 left: Radius.circular(8),
                                 right: Radius.circular(20),
                               ),
-                              borderSide: BorderSide(color: colorsBorder!),
+                              borderSide: BorderSide(color: colorsBorder),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.horizontal(
                                 left: Radius.circular(8),
                                 right: Radius.circular(20),
                               ),
-                              borderSide: BorderSide(color: colorsBorder!),
+                              borderSide: BorderSide(color: colorsBorder),
                             ),
                             hintText: 'Select Unit',
                             // contentPadding: const EdgeInsets.symmetric(
@@ -331,8 +307,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 crossAxisAlignment: .stretch,
                 children: [
                   // Save Button
-                  ElevatedButton(
-                    onPressed: () {
+                  AppButton(
+                    text: 'Save Item',
+                    onPressed: () async {
                       final name = _nameController.text.trim();
                       // TODO: Validate and save to Firestore
                       if (name.isNotEmpty &&
@@ -340,30 +317,31 @@ class _AddItemScreenState extends State<AddItemScreen> {
                           _selectedUnit != null) {
                         // Save item logic here
 
-                        final itemData = {
-                          'name': name,
-                          'category': _selectedCategory,
-                          'quantity':
-                              int.tryParse(_quantityController.text) ?? 1,
-                          'unit': _selectedUnit,
-                          'expiryDate': _selectedExpiryDate,
-                        };
+                        // Use a local variable to capture context if needed, but here we can just check mounted
+                        try {
+                          await FirebaseServices().addItem(
+                            name: name,
+                            category: _selectedCategory!,
+                            quantity: _quantityController.text.trim().isEmpty
+                                ? '1'
+                                : _quantityController.text.trim(),
+                            unit: _selectedUnit!,
+                            expiryDate: _selectedExpiryDate,
+                          );
+                          if (!context.mounted) return;
 
-                        FirebaseServices()
-                            .addItem(itemData)
-                            .then((itemId) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Item added successfully!'),
-                                ),
-                              );
-                              Navigator.pop(context);
-                            })
-                            .catchError((error) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Error: $error')),
-                              );
-                            });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Item added successfully!'),
+                            ),
+                          );
+                          Navigator.pop(context);
+                        } catch (error) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $error')),
+                          );
+                        }
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -373,49 +351,13 @@ class _AddItemScreenState extends State<AddItemScreen> {
                         return;
                       }
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorsPrimary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 24,
-                      ),
-                    ),
-                    child: const Text(
-                      'Save Item',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                    ),
                   ),
                   const SizedBox(height: 12),
                   // Cancel Button
-                  ElevatedButton(
+                  AppButton(
+                    text: 'Cancel',
+                    type: AppButtonType.secondary,
                     onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      side: BorderSide(color: colorsBorder!),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 24,
-                      ),
-                    ),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                    ),
                   ),
                 ],
               ),

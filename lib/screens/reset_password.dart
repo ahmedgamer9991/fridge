@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fridge/services/firebase_services.dart';
 import 'package:fridge/utils/constants.dart';
-import 'package:fridge/screens/widgets.dart';
+import 'package:fridge/widgets/widgets.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -26,20 +26,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        title: const Text('Reset Your Password'),
-        elevation: 0.5,
-        shadowColor: const Color.fromRGBO(0, 0, 0, 1),
-      ),
+      backgroundColor: Colors.white,
+      appBar: AppHeader(title: 'Reset Your Password'),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
               const Spacer(flex: 2),
-              myTextForm(
+              AppTextFormField(
                 title: 'Email',
                 focusNode: _focusNode,
                 onTapOutside: (event) => _focusNode.unfocus(),
@@ -68,23 +63,20 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             await FirebaseServices().resetPassword(
                               _emailController.text.trim(),
                             );
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Password reset email sent"),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                              Navigator.pop(context);
-                            }
+                            if (!context.mounted) return;
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Password reset email sent"),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            Navigator.pop(context);
                           } on Exception catch (e) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Error: ${e.toString()}'),
-                                ),
-                              );
-                            }
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: ${e.toString()}')),
+                            );
                           } finally {
                             if (mounted) setState(() => _isLoading = false);
                           }

@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fridge/models/inventory_item.dart';
 
 class FirebaseServices {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -137,7 +138,15 @@ class FirebaseServices {
     }
   }
 
-  Future<String> addItem(Map<String, dynamic> itemData) async {
+  Future<String> addItem({
+    required String name,
+    required String quantity,
+    required String unit,
+    required String category,
+    DateTime? expiryDate,
+    String? imageUrl,
+    String? notes,
+  }) async {
     final User? user = _auth.currentUser;
     if (user == null) throw Exception('No authenticated user');
 
@@ -147,7 +156,18 @@ class FirebaseServices {
           .doc(user.uid)
           .collection('items')
           .add({
-            ...itemData,
+            'name': name,
+            'quantity': quantity,
+            'unit': unit,
+            'category': category,
+            'expiryDate':
+                expiryDate, // Firestore handles DateTime directly or needs Timestamp?
+            // Firestore SDK handles DateTime by converting to Timestamp automatically usually,
+            // but for consistency with existing code (if any), explicit Timestamp might be safer if we read it as Timestamp.
+            // However, .add() supports DateTime.
+            'imageUrl': imageUrl,
+            'notes': notes,
+            'status': 'Fresh', // Default status
             'createdAt': FieldValue.serverTimestamp(),
             'updatedAt': FieldValue.serverTimestamp(),
           });
@@ -170,40 +190,37 @@ class FirebaseServices {
         .snapshots();
   }
 
-  Stream<List<Map<String, dynamic>>> getItemsWithStatus() {
+  Stream<List<InventoryItem>> getItems() {
     return getItemsStream().map((snapshot) {
       return snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
-        // final expiryDate = (data['expiryDate'] as Timestamp?)?.toDate();
-        String status = data["status"] ?? _calculateStatus(data);
-
-        // if (expiryDate != null) {
-        //   final now = DateTime.now();
-        //   final daysUntilExpiry = expiryDate.difference(now).inDays;
-
-        //   if (daysUntilExpiry <= 0) {
-        //     status = 'Spoiled';
-        //   } else if (daysUntilExpiry <= 3) {
-        //     status = 'Expiring Soon';
-        //   }
-        // }
-
-        return {...data, 'id': doc.id, 'status': status};
+        // Calculate status dynamically (ignoring stored 'Fresh'/'Expiring Soon' to allow auto-updates)
+        // We pass the whole data map so _calculateStatus can respect 'Spoiled' if manually set
+        String status = _calculateStatus(data);
+        final modelData = {...data, 'status': status};
+        return InventoryItem.fromMap(modelData, doc.id);
       }).toList();
     });
   }
 
-  Future<void> updateItem(String itemId, Map<String, dynamic> updates) async {
+  Future<void> updateItem(InventoryItem item) async {
     final User? user = _auth.currentUser;
     if (user == null) throw Exception('No authenticated user');
 
     try {
+      // Calculate status if needed, or rely on item.status
+      // For now, we trust the item's status or let backend rules handle it.
+      // But we should probably remove 'id' and update 'updatedAt'
+      final Map<String, dynamic> data = item.toMap();
+      data.remove('id');
+      data['updatedAt'] = FieldValue.serverTimestamp();
+
       await _firestore
           .collection('users')
           .doc(user.uid)
           .collection('items')
-          .doc(itemId)
-          .update({...updates, 'updatedAt': FieldValue.serverTimestamp()});
+          .doc(item.id)
+          .update(data);
     } on FirebaseException catch (e) {
       throw Exception('Failed to update item: ${e.message}');
     }
@@ -244,7 +261,7 @@ class FirebaseServices {
   //       });
   // }
 
-  Future<Map<String, dynamic>> getItemById(String itemId) async {
+  Future<InventoryItem> getItem(String itemId) async {
     final User? user = _auth.currentUser;
     if (user == null) throw Exception('No authenticated user');
 
@@ -258,25 +275,40 @@ class FirebaseServices {
     if (!doc.exists) throw Exception('Item not found');
 
     final data = doc.data()!;
-    return {
-      ...data,
-      'id': doc.id,
-      'status':
-          data["status"] ?? _calculateStatus(data), // Reuse your status logic
-    };
+    String status = _calculateStatus(data);
+    final modelData = {...data, 'status': status};
+
+    return InventoryItem.fromMap(modelData, doc.id);
   }
 
   // Helper method to calculate status (reuse your existing logic)
   String _calculateStatus(Map<String, dynamic> data) {
-    if (data["status"] != null) return data["status"];
+    // 1. Check if manually marked with a final status
+    final currentStatus = data["status"];
+    if (currentStatus == 'Consumed' || currentStatus == 'Thrown Away') {
+      return currentStatus;
+    }
+
     final expiryDate = (data['expiryDate'] as Timestamp?)?.toDate();
-    if (expiryDate == null) return 'Fresh';
+    if (expiryDate == null) {
+      // If no date, check if manually marked as Spoiled
+      return (currentStatus == 'Spoiled') ? 'Spoiled' : 'Fresh';
+    }
 
+    // 2. Normalize dates to midnight for accurate day comparison
     final now = DateTime.now();
-    final daysUntilExpiry = expiryDate.difference(now).inDays;
+    final today = DateTime(now.year, now.month, now.day);
+    final expiry = DateTime(expiryDate.year, expiryDate.month, expiryDate.day);
 
-    if (daysUntilExpiry <= 0) return 'Spoiled'; // todo expired
+    final daysUntilExpiry = expiry.difference(today).inDays;
+
+    // 3. Time-based Logic
+    if (daysUntilExpiry < 0) return 'Spoiled';
     if (daysUntilExpiry <= 3) return 'Expiring Soon';
+
+    // 4. If time-wise it's Fresh, check if user manually marked as Spoiled
+    if (currentStatus == 'Spoiled') return 'Spoiled';
+
     return 'Fresh';
   }
 }

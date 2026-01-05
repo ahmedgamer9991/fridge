@@ -1,8 +1,11 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:flutter/material.dart';
 import 'package:fridge/services/firebase_services.dart';
 import 'package:fridge/utils/constants.dart';
+import 'package:fridge/widgets/widgets.dart';
+import 'package:fridge/utils/helpers.dart';
+import 'package:fridge/models/inventory_item.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -16,7 +19,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   final _focusNode = FocusNode();
   Timer? _debounce;
-  final List<Map<String, dynamic>> _allItems = [];
+  final List<InventoryItem> _allItems = [];
   bool _isSearching = false;
   String _selectedStatFilter = 'all';
   final Map<String, String> _statFilterMap = {
@@ -26,9 +29,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
     'Spoiled/Expired': 'spoiled',
   };
 
-  StreamBuilder<List<Map<String, dynamic>>> _buildInventoryList() {
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: FirebaseServices().getItemsWithStatus(),
+  StreamBuilder<List<InventoryItem>> _buildInventoryList() {
+    return StreamBuilder<List<InventoryItem>>(
+      stream: FirebaseServices().getItems(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -58,11 +61,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-  List<Map<String, dynamic>> _filterItems(List<Map<String, dynamic>> items) {
+  List<InventoryItem> _filterItems(List<InventoryItem> items) {
     final searchTerm = _searchController.text.toLowerCase().trim();
-    List<Map<String, dynamic>> filtered = items.where((item) {
+    List<InventoryItem> filtered = items.where((item) {
       if (_selectedCategory == 'All') return true;
-      return (item['category'] as String?) == _selectedCategory;
+      return item.category == _selectedCategory;
     }).toList();
 
     // Apply stat filter second
@@ -75,37 +78,41 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
     _isSearching = true;
     return filtered.where((item) {
-      final itemName = (item['name'] as String).toLowerCase();
-      final category = (item['category'] as String?)?.toLowerCase() ?? '';
-      final status = (item['status'] as String).toLowerCase();
+      final itemName = item.name.toLowerCase();
+      final category = item.category.toLowerCase();
+      final status = item.status.toLowerCase();
       return itemName.contains(searchTerm) ||
           category.contains(searchTerm) ||
           status.contains(searchTerm);
     }).toList();
   }
 
-  List<Map<String, dynamic>> _applyStatFilter(
-    List<Map<String, dynamic>> items,
-  ) {
+  List<InventoryItem> _applyStatFilter(List<InventoryItem> items) {
     switch (_selectedStatFilter) {
       case 'all':
         return items;
       case 'expiring':
-        return items
-            .where((item) => item['status'] == 'Expiring Soon')
-            .toList();
+        return items.where((item) => item.status == 'Expiring Soon').toList();
       case 'low_stock':
         return items.where(_isLowStock).toList();
       case 'spoiled':
-        return items.where((item) => item['status'] == 'Spoiled').toList();
+        return items.where((item) => item.status == 'Spoiled').toList();
       default:
         return items;
     }
   }
 
-  bool _isLowStock(Map<String, dynamic> item) {
-    int quantity = item['quantity'] as int;
-    String unit = item['unit'] as String;
+  bool _isLowStock(InventoryItem item) {
+    // Basic logic based on unit (mock logic)
+    // You can refine this based on your preferences
+    double quantity;
+    try {
+      quantity = double.parse(item.quantity);
+    } catch (e) {
+      return false; // Skip if quantity is not a number
+    }
+
+    final unit = item.unit;
 
     if (unit == 'units' || unit == 'pack') {
       return quantity <= 2;
@@ -116,24 +123,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
     }
     return quantity <= 2;
   }
-  // todo make it one function if possible
-  // int _calculateLowStock(List<Map<String, dynamic>> items) {
-  //   // Define low stock threshold (customize as needed)
-  //   return items.where((item) {
-  //     int quantity = item['quantity'] as int;
-  //     String unit = item['unit'] as String;
-
-  //     // Different thresholds for different units
-  //     if (unit == 'units' || unit == 'pack') {
-  //       return quantity <= 2;
-  //     } else if (unit == 'g' || unit == 'ml') {
-  //       return quantity <= 100;
-  //     } else if (unit == 'kg' || unit == 'L') {
-  //       return quantity <= 0.5;
-  //     }
-  //     return quantity <= 2;
-  //   }).length;
-  // }
 
   void _onSearchChanged(String value) {
     // Cancel previous debounce timer
@@ -151,29 +140,27 @@ class _InventoryScreenState extends State<InventoryScreen> {
     });
   }
 
-  Text _getAppBarTitle() {
+  String _getAppBarTitle() {
     if (_isSearching) {
-      return Text('${_filterItems(_allItems).length} results');
+      return '${_filterItems(_allItems).length} results';
     }
 
     if (_selectedStatFilter != 'all') {
       final filterName = _statFilterMap.entries
           .firstWhere((e) => e.value == _selectedStatFilter)
           .key;
-      return Text('Showing: $filterName');
+      return 'Showing: $filterName';
     }
 
-    return const Text('My Home Fridge');
+    return 'My Home Fridge';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
+      appBar: AppHeader(
         title: _getAppBarTitle(),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
         automaticallyImplyLeading: false,
         actions: [
           if (_selectedStatFilter != 'all' || _selectedCategory != 'All')
@@ -206,40 +193,39 @@ class _InventoryScreenState extends State<InventoryScreen> {
             onPressed: () {},
           ),
         ],
-        elevation: .5,
-        shadowColor: Colors.black,
       ),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 12),
-                    // Stats Grid (2x2)
-                    _buildStatsGrid(),
-                    const SizedBox(height: 16),
-
-                    // Search Bar
-                    _searchBar(),
-                    const SizedBox(height: 12),
-
-                    // Scrollable Category Chips
-                    _buildScrollableCategories(),
-                    const SizedBox(height: 12),
-
-                    // Item List
-                    _buildInventoryList(),
-                    const SizedBox(height: 7),
-                  ],
-                ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 12),
+              // Stats Grid (2x2)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: _buildStatsGrid(),
               ),
-            );
-          },
+              const SizedBox(height: 16),
+
+              // Search Bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: _searchBar(),
+              ),
+              const SizedBox(height: 12),
+
+              // Scrollable Category Chips
+              _buildScrollableCategories(),
+              const SizedBox(height: 12),
+
+              // Item List
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: _buildInventoryList(),
+              ),
+              const SizedBox(height: 7),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -251,65 +237,31 @@ class _InventoryScreenState extends State<InventoryScreen> {
           // ).showSnackBar(const SnackBar(content: Text('Add new item')));
         },
         backgroundColor: colorsPrimary,
-        child: const Icon(Icons.add, color: Colors.white),
         shape: CircleBorder(),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
-  TextField _searchBar() {
-    return TextField(
-      onTapOutside: (event) {
-        _focusNode.unfocus();
-        if (_searchController.text.isEmpty) {
-          setState(() {});
-        }
-      },
-      focusNode: _focusNode,
+  Widget _searchBar() {
+    return AppSearchBar(
       controller: _searchController,
+      focusNode: _focusNode,
       onChanged: _onSearchChanged,
-      decoration: InputDecoration(
-        prefixIcon: Icon(Icons.search, color: colorsSecondary),
-        suffixIcon: _searchController.text.isNotEmpty
-            ? IconButton(
-                icon: Icon(Icons.close, color: colorsSecondary),
-                onPressed: () {
-                  _searchController.clear();
-                  _focusNode.unfocus(); // Hide keyboard
-                  setState(() {
-                    _isSearching = false;
-                  });
-                },
-              )
-            : null,
-        hintText: 'Search food items...',
-        hintStyle: TextStyle(color: colorsSecondary),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: colorsBorder!),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: colorsBorder!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: colorsPrimary),
-        ),
-      ),
+      onClear: () {
+        _searchController.clear();
+        _focusNode.unfocus(); // Hide keyboard
+        setState(() {
+          _isSearching = false;
+        });
+      },
     );
   }
 
   Widget _buildStatsGrid() {
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: FirebaseServices().getItemsWithStatus(),
+    return StreamBuilder<List<InventoryItem>>(
+      stream: FirebaseServices().getItems(),
       builder: (context, snapshot) {
         // if (snapshot.connectionState == ConnectionState.waiting) {
         //   return _buildLoadingStatsGrid();
@@ -319,10 +271,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
         int totalItems = items.length;
         int expiringSoon = items
-            .where((item) => item['status'] == 'Expiring Soon')
+            .where((item) => item.status == 'Expiring Soon')
             .length;
         int lowStock = items.where(_isLowStock).length;
-        int spoiled = items.where((item) => item['status'] == 'Spoiled').length;
+        int spoiled = items.where((item) => item.status == 'Spoiled').length;
 
         final stats = [
           {
@@ -336,21 +288,21 @@ class _InventoryScreenState extends State<InventoryScreen> {
             'label': 'Expiring Soon',
             'value': '$expiringSoon',
             'icon': Icons.timer,
-            'color': const Color(0xFFFF6F00),
+            'color': statusExpiring,
             'filterKey': 'expiring',
           },
           {
             'label': 'Low Stock',
             'value': '$lowStock',
             'icon': Icons.shopping_bag,
-            'color': const Color(0xFFE6C000),
+            'color': statusLowStock,
             'filterKey': 'low_stock',
           },
           {
             'label': 'Spoiled/Expired',
             'value': '$spoiled',
             'icon': Icons.cancel,
-            'color': const Color(0xFFD32F2F),
+            'color': statusSpoiled,
             'filterKey': 'spoiled',
           },
         ];
@@ -386,13 +338,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     elevation: isActive ? 4.0 : 2.5,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      // side: BorderSide(color: colorsBorder!),
+                      // side: BorderSide(color: colorsBorder),
                     ),
                     color: isActive ? activeColor : baseColor,
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Row(
-                        crossAxisAlignment: .start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Icon(
                             stat['icon'] as IconData,
@@ -420,7 +372,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.white,
-                                    fontWeight: .w600,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -441,67 +393,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-  // Widget _buildLoadingStatsGrid() {
-  //   return Wrap(
-  //     spacing: 8,
-  //     runSpacing: 8,
-  //     children: List.generate(4, (index) {
-  //       return SizedBox(
-  //         width: (MediaQuery.of(context).size.width - 48) / 2,
-  //         height: 96,
-  //         child: Card(
-  //           elevation: 2.5,
-  //           shape: RoundedRectangleBorder(
-  //             borderRadius: BorderRadius.circular(12),
-  //           ),
-  //           color: Colors.grey[200],
-  //           child: Padding(
-  //             padding: const EdgeInsets.all(16.0),
-  //             child: Row(
-  //               children: [
-  //                 Container(
-  //                   width: 25,
-  //                   height: 25,
-  //                   decoration: BoxDecoration(
-  //                     color: Colors.grey[300],
-  //                     borderRadius: BorderRadius.circular(4),
-  //                   ),
-  //                 ),
-  //                 const SizedBox(width: 10),
-  //                 Expanded(
-  //                   child: Column(
-  //                     crossAxisAlignment: CrossAxisAlignment.start,
-  //                     mainAxisAlignment: MainAxisAlignment.center,
-  //                     children: [
-  //                       Container(
-  //                         width: 40,
-  //                         height: 25,
-  //                         decoration: BoxDecoration(
-  //                           color: Colors.grey[300],
-  //                           borderRadius: BorderRadius.circular(4),
-  //                         ),
-  //                       ),
-  //                       const SizedBox(height: 4),
-  //                       Container(
-  //                         width: 80,
-  //                         height: 14,
-  //                         decoration: BoxDecoration(
-  //                           color: Colors.grey[300],
-  //                           borderRadius: BorderRadius.circular(4),
-  //                         ),
-  //                       ),
-  //                     ],
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //         ),
-  //       );
-  //     }),
-  //   );
-  // }
-
   Widget _buildScrollableCategories() {
     final categories = [
       'All',
@@ -516,6 +407,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     return SizedBox(
       height: 40,
       child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         itemCount: categories.length,
@@ -527,9 +419,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
             child: OutlinedButton(
               onPressed: () => setState(() => _selectedCategory = category),
               style: OutlinedButton.styleFrom(
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 backgroundColor: isSelected ? Colors.green[50] : Colors.white,
                 side: BorderSide(
-                  color: isSelected ? const Color(0xFFE8F5E9) : colorsBorder!,
+                  color: isSelected ? const Color(0xFFE8F5E9) : colorsBorder,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -548,143 +442,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-  Widget _buildItemCard(Map<String, dynamic> item) {
-    Color statusColor;
-    switch (item['status']) {
-      case 'Fresh':
-        statusColor = const Color(0xFF2E7D32);
-        break;
-      case 'Expiring Soon':
-        statusColor = const Color(0xFFFF6F00);
-        break;
-      case 'Spoiled':
-        statusColor = const Color(0xFFD32F2F);
-        break;
-      default:
-        statusColor = Colors.grey;
-    }
-
-    String expiryText = 'No expiry date';
-    final expiryDate = item['expiryDate'] as Timestamp?;
-    if (expiryDate != null) {
-      final date = expiryDate.toDate();
-      final now = DateTime.now();
-      final daysUntilExpiry = date.difference(now).inDays;
-
-      if (daysUntilExpiry <= 0) {
-        expiryText =
-            'Expired ${(-daysUntilExpiry).toString()} day${daysUntilExpiry == -1 ? '' : 's'} ago';
-      } else if (daysUntilExpiry == 1) {
-        expiryText = 'Expires tomorrow';
-      } else if (daysUntilExpiry <= 7) {
-        expiryText = 'Expires in $daysUntilExpiry days';
-      } else {
-        expiryText = 'Expires on ${date.day}/${date.month}/${date.year}';
-      }
-    }
-
-    return Material(
-      color: Colors.transparent,
-      borderRadius: .circular(12),
-      child: Card(
-        color: Colors.white,
-        elevation: 0.3,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: colorsBorder!, width: .7),
-        ),
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        child: InkWell(
-          borderRadius: .circular(12),
-          onTap: () {
-            Navigator.pushNamed(
-              context,
-              '/item-details',
-              arguments: item['id'] as String,
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                // Image/Icon
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: Colors.grey[200],
-                  child: Icon(Icons.local_drink, color: Colors.grey[700]),
-                ),
-                const SizedBox(width: 12),
-
-                // Text Content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item['name'] as String,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${item['quantity']} ${item['unit']}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: statusColor,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Text(
-                              item['status'] as String,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 1,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              expiryText,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                              textAlign: TextAlign.right,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+  Widget _buildItemCard(InventoryItem item) {
+    return InventoryItemCard(
+      title: item.name,
+      subtitle: '${item.quantity} ${item.unit}',
+      status: item.status,
+      statusColor: AppHelpers.getStatusColor(item.status),
+      expiryText: AppHelpers.formatExpiryDate(item.expiryDate),
+      onTap: () {
+        Navigator.pushNamed(context, '/item-details', arguments: item.id);
+      },
     );
   }
 
