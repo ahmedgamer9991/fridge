@@ -34,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: Colors.white,
+
       appBar: AppHeader(title: 'Log In'),
       body: SafeArea(
         child: SingleChildScrollView(

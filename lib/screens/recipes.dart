@@ -63,7 +63,6 @@ class _RecipesScreenState extends State<RecipesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppHeader(
         title: 'Search Recipes...',
         actions: [IconButton(icon: const Icon(Icons.search), onPressed: () {})],

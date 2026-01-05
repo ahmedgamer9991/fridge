@@ -158,7 +158,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppHeader(
         title: _getAppBarTitle(),
         automaticallyImplyLeading: false,

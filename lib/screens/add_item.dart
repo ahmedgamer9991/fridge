@@ -42,7 +42,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppHeader(title: 'Add Item'),
       body: SafeArea(
         child: SingleChildScrollView(

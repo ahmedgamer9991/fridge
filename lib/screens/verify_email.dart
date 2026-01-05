@@ -105,7 +105,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
         await FirebaseServices().signOut();
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
         appBar: AppHeader(
           title: 'Verify Email',
           leading: _emailVerified

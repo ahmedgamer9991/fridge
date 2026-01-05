@@ -70,7 +70,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppHeader(title: 'Profile', automaticallyImplyLeading: false),
       body: SafeArea(
         child: SingleChildScrollView(

@@ -26,7 +26,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppHeader(title: 'Reset Your Password'),
       body: SafeArea(
         child: Padding(

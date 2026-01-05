@@ -86,7 +86,6 @@ class _EditItemScreenState extends State<EditItemScreen> {
     if (_hasError) return const Center(child: Text('Failed to load item'));
     if (_itemData == null) return const Center(child: Text('Item not found'));
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppHeader(title: 'Edit Item'),
       body: SafeArea(
         child: SingleChildScrollView(

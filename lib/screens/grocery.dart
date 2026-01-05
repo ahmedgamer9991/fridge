@@ -63,7 +63,6 @@ class _GroceryScreenState extends State<GroceryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppHeader(
         title: 'Grocery List',
         automaticallyImplyLeading: false,

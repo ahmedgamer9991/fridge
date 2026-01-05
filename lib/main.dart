@@ -26,7 +26,10 @@ class Fridge extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'fridge',
-      theme: ThemeData(splashFactory: NoSplash.splashFactory),
+      theme: ThemeData(
+        splashFactory: NoSplash.splashFactory,
+        scaffoldBackgroundColor: Colors.white,
+      ),
       debugShowCheckedModeBanner: false,
       home: StreamBuilder<User?>(
         stream: FirebaseServices().idTokenChanges,

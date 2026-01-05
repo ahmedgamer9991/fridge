@@ -59,7 +59,6 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppHeader(
         title: _itemData?.name ?? 'Item Details',
         // actions: [
