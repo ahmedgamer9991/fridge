@@ -12,8 +12,6 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   // User data
-  // final String _userName = 'John Doe';
-  // final String _userEmail = 'john.doe@example.com';
   final String _fridgeName = 'My Home Fridge';
 
   Map<String, dynamic>? _userProfile;
@@ -70,7 +68,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppHeader(title: 'Profile', automaticallyImplyLeading: false),
+      appBar: const AppHeader(
+        title: 'Profile',
+        automaticallyImplyLeading: false,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
@@ -78,242 +79,106 @@ class _ProfileScreenState extends State<ProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // User Profile Card
-              Card(
-                color: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: colorsBorder, width: .5),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          children: [
-                            CircleAvatar(
-                              radius: 40,
-                              backgroundColor: Colors.grey[200],
-                              child: Image.asset(
-                                'john_doe.png',
-                                width: 64,
-                                height: 64,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
-                                    Icons.person,
-                                    color: Colors.grey,
-                                    size: 48,
-                                  );
-                                },
-                              ),
-                              // Optional: Add border
-                              // foregroundDecoration: BoxDecoration(
-                              //   shape: BoxShape.circle,
-                              //   border: Border.all(color: colorsBorder, width: 2),
-                              // ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              _userProfile?["name"] ?? "Loading...",
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _userProfile?['email'] ?? 'none',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _userProfile?['role'] ?? "none role",
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              UserProfileCard(userProfile: _userProfile),
+
               const SizedBox(height: 24),
 
               // Notification Settings
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: Colors.grey[200]!, width: .5),
-                ),
-                child: Column(
-                  crossAxisAlignment: .start,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(color: Colors.grey[200]!),
-                        ),
-                      ),
-                      padding: .fromLTRB(16, 16, 0, 10),
-                      child: const Text(
-                        'Notification Settings',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                    // const SizedBox(height: 12),
-                    _buildToggleSetting(
-                      title: 'Expiry Alerts',
-                      description:
-                          'Receive notifications when items are nearing their expiry date.',
-                      value: _expiryAlerts,
-                      onChanged: (value) =>
-                          setState(() => _expiryAlerts = value),
-                    ),
-                    Divider(thickness: .5, indent: 15, endIndent: 15),
-                    _buildToggleSetting(
-                      title: 'Spoilage Alerts',
-                      description:
-                          'Get alerts for items likely to spoil soon, even before expiry.',
-                      value: _spoilageAlerts,
-                      onChanged: (value) =>
-                          setState(() => _spoilageAlerts = value),
-                    ),
-                    Divider(thickness: .5, indent: 15, endIndent: 15),
-                    _buildToggleSetting(
-                      title: 'Grocery Reminders',
-                      description:
-                          'Be reminded to buy low-stock items for your favorite meals.',
-                      value: _groceryReminders,
-                      onChanged: (value) =>
-                          setState(() => _groceryReminders = value),
-                    ),
-                    SizedBox(height: 8),
-                  ],
-                ),
+              ProfileSection(
+                title: 'Notification Settings',
+                children: [
+                  ProfileToggleTile(
+                    title: 'Expiry Alerts',
+                    description:
+                        'Receive notifications when items are nearing their expiry date.',
+                    value: _expiryAlerts,
+                    onChanged: (value) => setState(() => _expiryAlerts = value),
+                  ),
+                  const Divider(thickness: .5, indent: 15, endIndent: 15),
+                  ProfileToggleTile(
+                    title: 'Spoilage Alerts',
+                    description:
+                        'Get alerts for items likely to spoil soon, even before expiry.',
+                    value: _spoilageAlerts,
+                    onChanged: (value) =>
+                        setState(() => _spoilageAlerts = value),
+                  ),
+                  const Divider(thickness: .5, indent: 15, endIndent: 15),
+                  ProfileToggleTile(
+                    title: 'Grocery Reminders',
+                    description:
+                        'Be reminded to buy low-stock items for your favorite meals.',
+                    value: _groceryReminders,
+                    onChanged: (value) =>
+                        setState(() => _groceryReminders = value),
+                  ),
+                ],
               ),
+
               const SizedBox(height: 24),
 
               // Alert Preferences
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: Colors.grey[200]!, width: .5),
-                ),
-                child: Column(
-                  crossAxisAlignment: .start,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(color: Colors.grey[200]!),
-                        ),
-                      ),
-                      padding: .fromLTRB(16, 16, 0, 10),
-                      child: const Text(
-                        'Alert Preferences',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                    // const SizedBox(height: 12),
-                    _buildSliderSetting(
-                      title: 'Notify Before Expiry',
-                      description: 'Days before expiry to receive an alert.',
-                      value: _notifyBeforeExpiry,
-                      min: 1,
-                      max: 7,
-                      unit: 'days',
-                      onChanged: (value) =>
-                          setState(() => _notifyBeforeExpiry = value),
-                    ),
-                    const SizedBox(height: 5),
-                    Divider(thickness: .5, indent: 15, endIndent: 15),
-                    _buildNumberInputSetting(
-                      title: 'Restocking Threshold',
-                      description:
-                          'Alert when favorite meal ingredients are less than N items.',
-                      controller: _restockingController,
-                      unit: 'items',
-                    ),
-                    SizedBox(height: 8),
-                  ],
-                ),
+              ProfileSection(
+                title: 'Alert Preferences',
+                children: [
+                  ProfileSliderTile(
+                    title: 'Notify Before Expiry',
+                    description: 'Days before expiry to receive an alert.',
+                    value: _notifyBeforeExpiry,
+                    min: 1,
+                    max: 7,
+                    unit: 'days',
+                    onChanged: (value) =>
+                        setState(() => _notifyBeforeExpiry = value),
+                  ),
+                  const SizedBox(height: 5),
+                  const Divider(thickness: .5, indent: 15, endIndent: 15),
+                  ProfileTextFieldTile(
+                    title: 'Restocking Threshold',
+                    description:
+                        'Alert when favorite meal ingredients are less than N items.',
+                    controller: _restockingController,
+                    unit: 'items',
+                    focusNode: _focusNode1,
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      if (value.isNotEmpty) {
+                        final num = int.tryParse(value);
+                        if (num != null) {
+                          setState(() => _restockingThreshold = num);
+                        }
+                      }
+                    },
+                  ),
+                ],
               ),
+
               const SizedBox(height: 24),
 
               // Account Preferences
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: Colors.grey[200]!, width: .5),
-                ),
-                child: Column(
-                  crossAxisAlignment: .start,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(color: Colors.grey[200]!),
-                        ),
-                      ),
-                      padding: .fromLTRB(16, 16, 0, 10),
-                      child: const Text(
-                        'Account Preferences',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildDropdownSetting(
-                      title: 'Language',
-                      description:
-                          'Select your preferred language for the app.',
-                      value: _selectedLanguage,
-                      items: _languages,
-                      onChanged: (value) =>
-                          setState(() => _selectedLanguage = value!),
-                    ),
-                    // const SizedBox(height: 16),
-                    Divider(thickness: .5, indent: 15, endIndent: 15),
-                    _buildTextInputSetting(
-                      title: 'Fridge Name',
-                      description:
-                          'Customize the name displayed for your fridge.',
-                      controller: _fridgeNameController,
-
-                      //TODO onChanged: (value) {
-
-                      // },
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                ),
+              ProfileSection(
+                title: 'Account Preferences',
+                children: [
+                  const SizedBox(height: 4), // Added some padding to match look
+                  ProfileDropdownTile(
+                    title: 'Language',
+                    description: 'Select your preferred language for the app.',
+                    value: _selectedLanguage,
+                    items: _languages,
+                    onChanged: (value) =>
+                        setState(() => _selectedLanguage = value!),
+                  ),
+                  const Divider(thickness: .5, indent: 15, endIndent: 15),
+                  ProfileTextFieldTile(
+                    title: 'Fridge Name',
+                    description:
+                        'Customize the name displayed for your fridge.',
+                    controller: _fridgeNameController,
+                    focusNode: _focusNode2,
+                  ),
+                ],
               ),
+
               const SizedBox(height: 32),
 
               // Logout Button
@@ -321,7 +186,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    // TODO: Logout logic
                     await FirebaseServices().signOut();
                   },
                   style: ElevatedButton.styleFrom(
@@ -345,299 +209,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildToggleSetting({
-    required String title,
-    required String description,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.normal,
-          color: Colors.black,
-        ),
-      ),
-      subtitle: Text(
-        description,
-        style: const TextStyle(fontSize: 14, color: Colors.grey),
-      ),
-      trailing: Switch(
-        value: value,
-        onChanged: onChanged,
-        activeThumbColor: Colors.white,
-        activeTrackColor: colorsPrimary,
-        inactiveThumbColor: Colors.white,
-        inactiveTrackColor: colorsBorder,
-        trackOutlineColor: WidgetStateProperty.resolveWith<Color?>((
-          Set<WidgetState> states,
-        ) {
-          return Colors.transparent;
-        }),
-      ),
-    );
-  }
-
-  Widget _buildSliderSetting({
-    required String title,
-    required String description,
-    required double value,
-    required double min,
-    required double max,
-    required String unit,
-    required ValueChanged<double> onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 3,
-          ),
-          title: Row(
-            mainAxisAlignment: .spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: .start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.black,
-                    ),
-                  ),
-                  Text(
-                    description,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                ],
-              ),
-              Text(
-                '${value.toInt()} $unit',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: colorsPrimary,
-                ),
-              ),
-            ],
-          ),
-          // subtitle: Text(
-          //   description,
-          //   style: const TextStyle(fontSize: 14, color: Colors.grey),
-          // ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              SliderTheme(
-                data: SliderThemeData(
-                  trackHeight: 4.0,
-                  thumbColor: Colors.white,
-                  thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 9,
-                  ), // ✅ Correct way
-                  overlayShape: SliderComponentShape.noOverlay,
-                ),
-                child: Slider(
-                  value: value,
-                  min: min,
-                  max: max,
-                  divisions: (max - min).toInt(),
-                  label: '${value.toInt()} $unit',
-                  activeColor: colorsPrimary,
-                  inactiveColor: colorsBorder,
-                  onChanged: onChanged,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNumberInputSetting({
-    required String title,
-    required String description,
-    required TextEditingController controller,
-    required String unit,
-  }) {
-    return ListTile(
-      visualDensity: .compact,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.normal,
-          color: Colors.black,
-        ),
-      ),
-      subtitle: Text(
-        description,
-        style: const TextStyle(fontSize: 14, color: Colors.grey),
-      ),
-      trailing: SizedBox(
-        width: 100,
-        child: TextField(
-          onTapOutside: (event) => _focusNode1.unfocus(),
-          focusNode: _focusNode1,
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            isDense: true,
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colorsBorder),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colorsBorder),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colorsBorder),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
-          ),
-          textAlign: TextAlign.center,
-          onChanged: (value) {
-            if (value.isNotEmpty) {
-              final num = int.tryParse(value);
-              if (num != null) {
-                setState(() => _restockingThreshold = num);
-              }
-            }
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDropdownSetting({
-    required String title,
-    required String description,
-    required String value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.normal,
-          color: Colors.black,
-        ),
-      ),
-      subtitle: Text(
-        description,
-        style: const TextStyle(fontSize: 14, color: Colors.grey),
-      ),
-      trailing: SizedBox(
-        width: 140,
-        child: DropdownButtonFormField<String>(
-          initialValue: value,
-          items: items.map((item) {
-            return DropdownMenuItem<String>(value: item, child: Text(item));
-          }).toList(),
-          onChanged: onChanged,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colorsBorder),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colorsBorder),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colorsBorder),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
-          ),
-          dropdownColor: Colors.white,
-          icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextInputSetting({
-    required String title,
-    required String description,
-    required TextEditingController controller,
-    ValueChanged<String>? onChanged,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.normal,
-          color: Colors.black,
-        ),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: .start,
-        children: [
-          Text(
-            description,
-            style: const TextStyle(fontSize: 14, color: Colors.grey),
-          ),
-          SizedBox(height: 10),
-          TextField(
-            onChanged: onChanged,
-            onTapOutside: (event) => _focusNode2.unfocus(),
-            focusNode: _focusNode2,
-            controller: controller,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: colorsBorder),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: colorsBorder),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: colorsBorder),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 4,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

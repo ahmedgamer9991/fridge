@@ -7,6 +7,7 @@ import 'package:fridge/screens/add_item.dart';
 import 'package:fridge/screens/edit_item.dart';
 import 'package:fridge/screens/home.dart';
 import 'package:fridge/screens/item_details.dart';
+import 'package:fridge/screens/loading.dart';
 import 'package:fridge/screens/login.dart';
 import 'package:fridge/screens/reset_password.dart';
 import 'package:fridge/screens/signup.dart';
@@ -78,7 +79,7 @@ class _AuthGateState extends State<AuthGate> {
       stream: FirebaseServices().idTokenChanges,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SplashScreen();
+          return const LoadingScreen();
         }
 
         final user = snapshot.data;
