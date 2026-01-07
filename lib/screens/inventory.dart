@@ -29,16 +29,20 @@ class _InventoryScreenState extends State<InventoryScreen> {
     'Spoiled/Expired': 'spoiled',
   };
 
-  StreamBuilder<List<InventoryItem>> _buildInventoryList() {
+  Widget _buildInventoryList() {
     return StreamBuilder<List<InventoryItem>>(
       stream: FirebaseServices().getItems(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const SliverToBoxAdapter(
+            child: Center(child: CircularProgressIndicator()),
+          );
         }
 
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return SliverToBoxAdapter(
+            child: Center(child: Text('Error: ${snapshot.error}')),
+          );
         }
 
         final items = snapshot.data ?? [];
@@ -53,10 +57,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
         final filteredItems = _filterItems(items);
 
         if (filteredItems.isEmpty) {
-          return _buildEmptyState();
+          return SliverToBoxAdapter(child: _buildEmptyState());
         }
 
-        return Column(children: filteredItems.map(_buildItemCard).toList());
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => _buildItemCard(filteredItems[index]),
+            childCount: filteredItems.length,
+          ),
+        );
       },
     );
   }
@@ -194,37 +203,40 @@ class _InventoryScreenState extends State<InventoryScreen> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 12),
-              // Stats Grid (2x2)
-              Padding(
+        child: CustomScrollView(
+          slivers: [
+            const SliverToBoxAdapter(child: SizedBox(height: 12)),
+            // Stats Grid (2x2)
+            SliverToBoxAdapter(
+              child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: _buildStatsGrid(),
               ),
-              const SizedBox(height: 16),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-              // Search Bar
-              Padding(
+            // Search Bar
+            SliverToBoxAdapter(
+              child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: _searchBar(),
               ),
-              const SizedBox(height: 12),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-              // Scrollable Category Chips
-              _buildScrollableCategories(),
-              const SizedBox(height: 12),
+            // Scrollable Category Chips
+            SliverToBoxAdapter(child: _buildScrollableCategories()),
+            const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-              // Item List
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: _buildInventoryList(),
-              ),
-              const SizedBox(height: 7),
-            ],
-          ),
+            // Item List
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              sliver: _buildInventoryList(),
+            ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 80),
+            ), // Bottom padding for FAB
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton(

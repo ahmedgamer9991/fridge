@@ -12,6 +12,7 @@ import 'package:fridge/screens/reset_password.dart';
 import 'package:fridge/screens/signup.dart';
 import 'package:fridge/screens/verify_email.dart';
 import 'package:fridge/services/firebase_services.dart';
+import 'package:fridge/screens/loading.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,9 +36,7 @@ class Fridge extends StatelessWidget {
         stream: FirebaseServices().idTokenChanges,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
+            return const LoadingScreen();
           }
 
           final user = snapshot.data;

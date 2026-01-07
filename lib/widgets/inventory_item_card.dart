@@ -50,7 +50,7 @@ class InventoryItemCard extends StatelessWidget {
                           width: 48,
                           height: 48,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
+                          errorBuilder: (context, error, stackTrace) =>
                               Icon(Icons.local_drink, color: Colors.grey[700]),
                         ),
                       )

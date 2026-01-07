@@ -69,188 +69,215 @@ class _RecipesScreenState extends State<RecipesScreen> {
         automaticallyImplyLeading: false,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Filter Bar
-              Container(
-                padding: .symmetric(vertical: 3, horizontal: 7),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: colorsBorder),
-                ),
-                child: Row(
-                  spacing: 5,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () =>
-                            setState(() => _filterMode = 'My Fridge'),
-                        style: TextButton.styleFrom(
-                          backgroundColor: _filterMode == 'My Fridge'
-                              ? Colors.white
-                              : Colors.transparent,
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            side: _filterMode == 'My Fridge'
-                                ? BorderSide(color: colorsBorder, width: .3)
-                                : BorderSide(color: Colors.transparent),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                        ),
-                        child: const Text(
-                          'My Fridge',
-                          style: TextStyle(fontSize: 15, fontWeight: .w600),
-                        ),
+                    // Filter Bar
+                    Container(
+                      padding: .symmetric(vertical: 3, horizontal: 7),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(color: colorsBorder),
                       ),
-                    ),
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () =>
-                            setState(() => _filterMode = 'Browse All'),
-                        style: TextButton.styleFrom(
-                          backgroundColor: _filterMode == 'Browse All'
-                              ? Colors.white
-                              : Colors.transparent,
-                          foregroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: _filterMode == 'Browse All'
-                                ? BorderSide(color: colorsBorder, width: .3)
-                                : BorderSide(color: Colors.transparent),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                        ),
-                        child: const Text(
-                          'Browse All',
-                          style: TextStyle(fontSize: 15, fontWeight: .w600),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Favorite Meals Section
-              const Text(
-                'Favorite Meals',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 125,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: _favoriteMeals.length,
-                  itemBuilder: (context, index) {
-                    final meal = _favoriteMeals[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 14.0),
-                      child: Stack(
+                      child: Row(
+                        spacing: 5,
                         children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.asset(
-                              meal['image'] as String,
-                              width: 160,
-                              height: 180,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  width: 160,
-                                  height: 180,
-                                  color: Colors.grey[200],
-                                  child: const Center(child: Text('Image')),
-                                );
-                              },
-                            ),
-                          ),
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: CircleAvatar(
-                              backgroundColor: Colors.black.withValues(
-                                alpha: 0.2,
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () =>
+                                  setState(() => _filterMode = 'My Fridge'),
+                              style: TextButton.styleFrom(
+                                backgroundColor: _filterMode == 'My Fridge'
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  side: _filterMode == 'My Fridge'
+                                      ? BorderSide(
+                                          color: colorsBorder,
+                                          width: .3,
+                                        )
+                                      : BorderSide(color: Colors.transparent),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
                               ),
-                              radius: 20,
-                              child: IconButton(
-                                padding: .zero,
-                                onPressed: () {
-                                  setState(() {
-                                    meal['is_favorite'] = !meal['is_favorite'];
-                                  });
-                                },
-                                icon: Icon(
-                                  meal['is_favorite'] == true
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  color: Colors.white,
-                                  size: 19,
+                              child: const Text(
+                                'My Fridge',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: .w600,
                                 ),
                               ),
                             ),
                           ),
-                          Positioned(
-                            bottom: 8,
-                            left: 8,
-                            right: 8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 0,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.0),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                meal['name'] as String,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () =>
+                                  setState(() => _filterMode = 'Browse All'),
+                              style: TextButton.styleFrom(
+                                backgroundColor: _filterMode == 'Browse All'
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  side: _filterMode == 'Browse All'
+                                      ? BorderSide(
+                                          color: colorsBorder,
+                                          width: .3,
+                                        )
+                                      : BorderSide(color: Colors.transparent),
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                              ),
+                              child: const Text(
+                                'Browse All',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: .w600,
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 24),
+                    ),
+                    const SizedBox(height: 24),
 
-              // Recipe Suggestions Section
-              const Text(
-                'Recipe Suggestions',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+                    // Favorite Meals Section
+                    const Text(
+                      'Favorite Meals',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 125,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: _favoriteMeals.length,
+                        itemBuilder: (context, index) {
+                          final meal = _favoriteMeals[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 14.0),
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.asset(
+                                    meal['image'] as String,
+                                    width: 160,
+                                    height: 180,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 160,
+                                        height: 180,
+                                        color: Colors.grey[200],
+                                        child: const Center(
+                                          child: Text('Image'),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: CircleAvatar(
+                                    backgroundColor: Colors.black.withValues(
+                                      alpha: 0.2,
+                                    ),
+                                    radius: 20,
+                                    child: IconButton(
+                                      padding: .zero,
+                                      onPressed: () {
+                                        setState(() {
+                                          meal['is_favorite'] =
+                                              !meal['is_favorite'];
+                                        });
+                                      },
+                                      icon: Icon(
+                                        meal['is_favorite'] == true
+                                            ? Icons.favorite
+                                            : Icons.favorite_border,
+                                        color: Colors.white,
+                                        size: 19,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 8,
+                                  left: 8,
+                                  right: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 0,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.0,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      meal['name'] as String,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Recipe Suggestions Section
+                    const Text(
+                      'Recipe Suggestions',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              Column(
-                children: _recipeSuggestions.map((recipe) {
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final recipe = _recipeSuggestions[index];
                   return Card(
                     color: Colors.white,
                     elevation: 0,
@@ -404,10 +431,10 @@ class _RecipesScreenState extends State<RecipesScreen> {
                       ],
                     ),
                   );
-                }).toList(),
+                }, childCount: _recipeSuggestions.length),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
