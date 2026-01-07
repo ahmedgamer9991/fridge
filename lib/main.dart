@@ -12,7 +12,7 @@ import 'package:fridge/screens/reset_password.dart';
 import 'package:fridge/screens/signup.dart';
 import 'package:fridge/screens/verify_email.dart';
 import 'package:fridge/services/firebase_services.dart';
-import 'package:fridge/screens/loading.dart';
+import 'package:fridge/screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,29 +32,7 @@ class Fridge extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
       ),
       debugShowCheckedModeBanner: false,
-      home: StreamBuilder<User?>(
-        stream: FirebaseServices().idTokenChanges,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const LoadingScreen();
-          }
-
-          final user = snapshot.data;
-
-          // Not logged in → show home/onboarding
-          if (user == null) {
-            return const HomeScreen();
-          }
-
-          // Logged in but email not verified → show verification screen
-          if (!user.emailVerified) {
-            return const VerifyEmailScreen();
-          }
-
-          // Logged in and email verified → show app
-          return const Root();
-        },
-      ),
+      home: const AuthGate(),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignupScreen(),
@@ -63,6 +41,60 @@ class Fridge extends StatelessWidget {
         "/edit-item": (context) => const EditItemScreen(),
         "/item-details": (context) => const ItemDetailsScreen(),
         '/verify-email': (context) => const VerifyEmailScreen(),
+      },
+    );
+  }
+}
+
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  bool _showSplash = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(milliseconds: 2500), () {
+      if (mounted) {
+        setState(() {
+          _showSplash = false;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_showSplash) {
+      return const SplashScreen();
+    }
+
+    return StreamBuilder<User?>(
+      stream: FirebaseServices().idTokenChanges,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SplashScreen();
+        }
+
+        final user = snapshot.data;
+
+        // Not logged in → show home/onboarding
+        if (user == null) {
+          return const HomeScreen();
+        }
+
+        // Logged in but email not verified → show verification screen
+        if (!user.emailVerified) {
+          return const VerifyEmailScreen();
+        }
+
+        // Logged in and email verified → show app
+        return const Root();
       },
     );
   }
