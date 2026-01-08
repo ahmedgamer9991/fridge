@@ -93,7 +93,9 @@ class ProfileSection extends StatelessWidget {
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+              border: Border(
+                bottom: BorderSide(color: Colors.grey[200]!, width: .5),
+              ),
             ),
             padding: const EdgeInsets.fromLTRB(16, 16, 0, 10),
             child: Text(
@@ -272,7 +274,6 @@ class ProfileTextFieldTile extends StatelessWidget {
     this.focusNode,
     this.onChanged,
   });
-
   @override
   Widget build(BuildContext context) {
     if (unit != null) {
@@ -300,6 +301,7 @@ class ProfileTextFieldTile extends StatelessWidget {
             keyboardType: keyboardType,
             onChanged: onChanged,
             hintText: '',
+            textAlign: TextAlign.center,
           ),
         ),
       );

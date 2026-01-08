@@ -64,6 +64,7 @@ class AppTextField extends StatelessWidget {
   final String? errorText;
   final ValueChanged<String>? onChanged;
   final TextInputType? keyboardType;
+  final TextAlign textAlign;
 
   const AppTextField({
     super.key,
@@ -76,6 +77,7 @@ class AppTextField extends StatelessWidget {
     this.errorText,
     this.onChanged,
     this.keyboardType,
+    this.textAlign = TextAlign.start,
   });
 
   @override
@@ -103,6 +105,7 @@ class AppTextField extends StatelessWidget {
       ),
       onChanged: onChanged,
       keyboardType: keyboardType,
+      textAlign: textAlign,
     );
   }
 }
