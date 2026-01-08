@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:fridge/utils/constants.dart';
 import 'package:fridge/widgets/widgets.dart';
 import 'package:fridge/services/firebase_services.dart';
-import 'package:fridge/utils/constants.dart';
+import 'package:fridge/utils/error_utils.dart';
 import 'package:fridge/models/inventory_item.dart';
 
 class EditItemScreen extends StatefulWidget {
@@ -397,9 +398,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
       Navigator.pop(context, true);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $error')));
+      ErrorUtils.showErrorSnackBar(context, ErrorUtils.parseError(error));
     }
   }
 }

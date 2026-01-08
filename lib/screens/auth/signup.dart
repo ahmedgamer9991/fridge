@@ -2,7 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:fridge/widgets/widgets.dart';
 import 'package:fridge/utils/constants.dart';
-import '../services/firebase_services.dart';
+import 'package:fridge/utils/error_utils.dart';
+import 'package:fridge/services/firebase_services.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -173,28 +174,16 @@ class _SignupScreenState extends State<SignupScreen> {
                             _isLoading = true;
                           });
                           try {
-                            // TODO: Handle signup logic
                             await FirebaseServices().createAccount(
                               _emailController.text.trim(),
                               _passwordController.text.trim(),
                               _nameController.text.trim(),
                               _selectedRole!,
                             );
-                            // ✅ Send verification email automatically
                             await FirebaseServices().sendEmailVerification();
 
                             if (!context.mounted) return;
                             Navigator.pop(context);
-
-                            // ✅ Navigate to verification screen instead of app
-                            // Navigator.popUntil(context, (route) => route.isFirst);
-                            // ScaffoldMessenger.of(context).showSnackBar(
-                            //   SnackBar(
-                            //     content: Text(
-                            //       'Signing up as $_selectedRole user...',
-                            //     ),
-                            //   ),
-                            // );
                           } catch (e) {
                             if (mounted) {
                               setState(() {
@@ -202,8 +191,9 @@ class _SignupScreenState extends State<SignupScreen> {
                               });
                             }
                             if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error: ${e.toString()}')),
+                            ErrorUtils.showErrorSnackBar(
+                              context,
+                              ErrorUtils.parseError(e),
                             );
                           }
                         }

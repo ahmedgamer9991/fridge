@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:fridge/screens/grocery.dart';
-import 'package:fridge/screens/inventory.dart';
-import 'package:fridge/screens/profile.dart';
-import 'package:fridge/screens/recipes.dart';
+import 'package:fridge/screens/main/grocery.dart';
+import 'package:fridge/screens/main/inventory.dart';
+import 'package:fridge/screens/main/profile.dart';
+import 'package:fridge/screens/main/recipes.dart';
 import 'package:fridge/utils/constants.dart';
 
 class Root extends StatefulWidget {

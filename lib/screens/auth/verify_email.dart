@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fridge/services/firebase_services.dart';
 import 'package:fridge/utils/constants.dart';
 import 'package:fridge/widgets/widgets.dart';
+import 'package:fridge/utils/error_utils.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   const VerifyEmailScreen({super.key});
@@ -61,7 +62,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Error checking verification: $e';
+          _errorMessage = ErrorUtils.parseError(e);
         });
       }
     }
@@ -81,18 +82,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Failed to send email: ${_getFriendlyError(e)}';
+          _errorMessage = ErrorUtils.parseError(e);
         });
       }
     }
-  }
-
-  String _getFriendlyError(dynamic error) {
-    final msg = error.toString().toLowerCase();
-    if (msg.contains('network')) return 'No internet connection';
-    if (msg.contains('timeout')) return 'Request timed out';
-    if (msg.contains('invalid-email')) return 'Invalid email address';
-    return 'Please try again later';
   }
 
   @override

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fridge/services/firebase_services.dart';
 import 'package:fridge/utils/constants.dart';
 import 'package:fridge/widgets/widgets.dart';
+import 'package:fridge/utils/error_utils.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -71,10 +72,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                               ),
                             );
                             Navigator.pop(context);
-                          } on Exception catch (e) {
+                          } catch (e) {
                             if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error: ${e.toString()}')),
+                            ErrorUtils.showErrorSnackBar(
+                              context,
+                              ErrorUtils.parseError(e),
                             );
                           } finally {
                             if (mounted) setState(() => _isLoading = false);

@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fridge/core/errors/exceptions.dart';
 import 'package:fridge/models/inventory_item.dart';
 
 class FirebaseServices {
@@ -12,10 +13,17 @@ class FirebaseServices {
           .signInWithEmailAndPassword(email: email, password: password);
       return userCredential.user!.uid;
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
-        throw Exception('Invalid email or password');
+      if (e.code == 'user-not-found' ||
+          e.code == 'wrong-password' ||
+          e.code == 'invalid-credential') {
+        throw AuthException('Invalid email or password');
+      } else if (e.code == 'network-request-failed') {
+        throw NetworkException();
       }
-      rethrow;
+      throw ServerException('Login failed: ${e.message}');
+    } catch (e) {
+      if (e is AppException) rethrow; // Allow AppExceptions to bubble up
+      throw ServerException('An unexpected error occurred during login');
     }
   }
 
@@ -43,17 +51,24 @@ class FirebaseServices {
 
         return user.uid;
       } else {
-        throw Exception('User creation failed');
+        throw AuthException('User user creation returned null');
       }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
-        throw Exception('Email already in use');
+        throw AuthException('This email is already in use by another account.');
       } else if (e.code == 'invalid-email') {
-        throw Exception('Invalid email');
+        throw AuthException('The email address is invalid.');
       } else if (e.code == 'weak-password') {
-        throw Exception('Password too weak');
+        throw AuthException('The password is too weak.');
+      } else if (e.code == 'network-request-failed') {
+        throw NetworkException();
       }
-      rethrow;
+      throw ServerException('Registration failed: ${e.message}');
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException(
+        'An unexpected error occurred during registration.',
+      );
     }
   }
 
@@ -61,15 +76,27 @@ class FirebaseServices {
     final User? user = _auth.currentUser;
     if (user == null) return null;
 
-    final DocumentSnapshot doc = await _firestore
-        .collection('users')
-        .doc(user.uid)
-        .get();
-    return doc.exists ? doc.data() as Map<String, dynamic> : null;
+    try {
+      final DocumentSnapshot doc = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      return doc.exists ? doc.data() as Map<String, dynamic> : null;
+    } on FirebaseException catch (e) {
+      if (e.code == 'unavailable') {
+        // Offline
+        throw NetworkException();
+      }
+      throw ServerException('Failed to fetch user profile: ${e.message}');
+    }
   }
 
   Future<void> signOut() async {
-    await _auth.signOut();
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      throw ServerException('Failed to sign out: $e');
+    }
   }
 
   Future<void> resetPassword(String email) async {
@@ -77,37 +104,53 @@ class FirebaseServices {
       await _auth.sendPasswordResetEmail(email: email);
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
-        throw Exception('No account found for this email');
+        throw AuthException('No account found for this email address.');
       } else if (e.code == 'invalid-email') {
-        throw Exception('Invalid email address');
+        throw AuthException('Please enter a valid email address.');
+      } else if (e.code == 'network-request-failed') {
+        throw NetworkException();
       }
-      rethrow;
+      throw ServerException('Password reset failed: ${e.message}');
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException(
+        'An unexpected error occurred during password reset.',
+      );
     }
   }
 
   Future<void> sendEmailVerification() async {
     final User? user = _auth.currentUser;
-    if (user == null) throw Exception('No authenticated user');
+    if (user == null) {
+      return; // Should likely not happen here if we just signed up, but good to be safe
+    }
 
     try {
       await user.sendEmailVerification();
     } on FirebaseException catch (e) {
-      if (e.code == 'user-not-found') {
-        throw Exception('User account not found');
-      } else if (e.code == 'invalid-email') {
-        throw Exception('Email address is invalid');
+      if (e.code == 'network-request-failed') {
+        throw NetworkException();
       }
-      rethrow;
+      throw ServerException('Failed to send verification email: ${e.message}');
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException(
+        'An unexpected error occurred sending verification email.',
+      );
     }
   }
 
   Future<void> refreshUserStream() async {
     final User? user = _auth.currentUser;
     if (user != null) {
-      // Force token refresh to trigger idTokenChanges stream
-      await user.getIdToken(true);
-      // Reload strictly to ensure properties are up to date
-      await user.reload();
+      try {
+        await user.getIdToken(true);
+        await user.reload();
+      } catch (e) {
+        // Silent failure on refresh often okay, but can log or throw if critical
+        // throw NetworkException('Failed to refresh user session.');
+        // debugPrint("Failed to refresh user stream: $e");
+      }
     }
   }
 
@@ -119,14 +162,24 @@ class FirebaseServices {
     final User? user = _auth.currentUser;
     if (user == null) return false;
 
-    await user.reload();
-
-    return user.emailVerified;
+    try {
+      await user.reload();
+      return _auth.currentUser?.emailVerified ?? false;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'network-request-failed') {
+        throw NetworkException();
+      }
+      throw ServerException(e.message ?? 'Failed to check verification status');
+    } catch (e) {
+      throw ServerException('An unexpected error occurred: $e');
+    }
   }
 
   Future<void> updateUserProfile(Map<String, dynamic> updates) async {
     final User? user = _auth.currentUser;
-    if (user == null) throw Exception('No authenticated user');
+    if (user == null) {
+      throw AuthException('No authenticated user session found.');
+    }
 
     try {
       await _firestore.collection('users').doc(user.uid).update({
@@ -134,7 +187,11 @@ class FirebaseServices {
         'updatedAt': FieldValue.serverTimestamp(),
       });
     } on FirebaseException catch (e) {
-      throw Exception('Failed to update profile: ${e.message}');
+      if (e.code == 'unavailable') throw NetworkException();
+      throw ServerException('Failed to update profile: ${e.message}');
+    } catch (e) {
+      if (e is AppException) rethrow;
+      throw ServerException('An unexpected error occurred updating profile.');
     }
   }
 
@@ -148,7 +205,7 @@ class FirebaseServices {
     String? notes,
   }) async {
     final User? user = _auth.currentUser;
-    if (user == null) throw Exception('No authenticated user');
+    if (user == null) throw AuthException('No authenticated user');
 
     try {
       final docRef = await _firestore
@@ -173,7 +230,10 @@ class FirebaseServices {
           });
       return docRef.id;
     } on FirebaseException catch (e) {
-      throw Exception('Failed to add item: ${e.message}');
+      if (e.code == 'unavailable') throw NetworkException();
+      throw ServerException('Failed to add item: ${e.message}');
+    } catch (e) {
+      throw ServerException('An unexpected error occurred while adding item.');
     }
   }
 

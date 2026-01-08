@@ -3,6 +3,7 @@ import 'package:fridge/services/firebase_services.dart';
 import 'package:fridge/utils/constants.dart';
 import 'package:fridge/widgets/widgets.dart';
 import 'package:fridge/utils/helpers.dart';
+import 'package:fridge/utils/error_utils.dart';
 import 'package:fridge/models/inventory_item.dart';
 
 class ItemDetailsScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   InventoryItem? _itemData;
   bool _isLoading = true;
   bool _hasError = false;
+  String? _errorMessage;
   // late bool updated;
 
   @override
@@ -50,7 +52,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
         setState(() {
           _isLoading = false;
           _hasError = true;
-          debugPrint('Error loading item: $e');
+          _errorMessage = ErrorUtils.parseError(e);
         });
       }
     }
@@ -94,9 +96,10 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
           children: [
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 16),
-            const Text(
-              'Failed to load item details',
-              style: TextStyle(fontSize: 18),
+            Text(
+              _errorMessage ?? 'Failed to load item details',
+              style: const TextStyle(fontSize: 18),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
@@ -444,9 +447,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
       Navigator.pop(context);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $error')));
+      ErrorUtils.showErrorSnackBar(context, ErrorUtils.parseError(error));
     }
   }
 
@@ -479,8 +480,9 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                 Navigator.pop(context);
               } catch (error) {
                 if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Delete failed: $error')),
+                ErrorUtils.showErrorSnackBar(
+                  context,
+                  ErrorUtils.parseError(error),
                 );
               }
             },

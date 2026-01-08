@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fridge/services/firebase_services.dart';
 import 'package:fridge/utils/constants.dart';
 import 'package:fridge/widgets/widgets.dart';
+import 'package:fridge/utils/error_utils.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -40,11 +41,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _focusNode2 = FocusNode();
 
   Future<void> _loadUserProfile() async {
-    final profile = await FirebaseServices().getUserProfile();
-    if (mounted) {
-      setState(() {
-        _userProfile = profile;
-      });
+    try {
+      final profile = await FirebaseServices().getUserProfile();
+      if (mounted) {
+        setState(() {
+          _userProfile = profile;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        ErrorUtils.showErrorSnackBar(context, ErrorUtils.parseError(error));
+      }
     }
   }
 
@@ -186,7 +193,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () async {
-                    await FirebaseServices().signOut();
+                    try {
+                      await FirebaseServices().signOut();
+                    } catch (error) {
+                      if (context.mounted) {
+                        ErrorUtils.showErrorSnackBar(
+                          context,
+                          ErrorUtils.parseError(error),
+                        );
+                      }
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: statusSpoiled,
