@@ -241,7 +241,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Navigate to add item screen
           Navigator.pushNamed(context, '/add-item');
           // ScaffoldMessenger.of(
           //   context,

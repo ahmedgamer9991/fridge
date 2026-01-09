@@ -108,7 +108,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             _isLoading = true;
                           });
                           try {
-                            // TODO: Handle login logic
                             await FirebaseServices().signIn(
                               _emailController.text.trim(),
                               _passwordController.text.trim(),
@@ -158,7 +157,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     // const SizedBox(height: 8),
                     TextButton(
                       onPressed: () {
-                        // TODO: Navigate to signup screen
                         Navigator.pushReplacementNamed(context, '/signup');
                       },
                       child: Text(

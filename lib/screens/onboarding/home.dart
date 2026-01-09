@@ -73,12 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ElevatedButton(
                   onPressed: selectedUserType != null
                       ? () {
-                          // TODO: Navigate to next screen based on selection
-                          // e.g., Navigator.pushNamed(context, '/login');
                           Navigator.pushNamed(context, '/login');
-                          // ScaffoldMessenger.of(context).showSnackBar(
-                          //   const SnackBar(content: Text('Proceeding...')),
-                          // );
                         }
                       : null,
                   style: ElevatedButton.styleFrom(

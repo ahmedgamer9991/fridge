@@ -310,7 +310,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
                     text: 'Save Item',
                     onPressed: () async {
                       final name = _nameController.text.trim();
-                      // TODO: Validate and save to Firestore
                       if (name.isNotEmpty &&
                           _selectedCategory != null &&
                           _selectedUnit != null) {

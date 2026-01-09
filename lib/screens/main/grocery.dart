@@ -189,7 +189,6 @@ class _GroceryScreenState extends State<GroceryScreen> {
         trailing: IconButton(
           icon: const Icon(Icons.close, color: Colors.grey),
           onPressed: () {
-            // TODO: Remove item from list
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(SnackBar(content: Text('Removed ${item['name']}')));
