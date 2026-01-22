@@ -53,7 +53,7 @@ class _SignupScreenState extends State<SignupScreen> {
               // App Title
               Center(
                 child: Text(
-                  'FridgeMate',
+                  'Eyeventory',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,

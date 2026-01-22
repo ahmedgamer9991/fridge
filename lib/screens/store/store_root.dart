@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:fridge/screens/main/grocery.dart';
-import 'package:fridge/screens/main/inventory.dart';
-import 'package:fridge/screens/main/profile.dart';
-import 'package:fridge/screens/main/recipes.dart';
+import 'package:fridge/screens/shared/grocery.dart';
+import 'package:fridge/screens/shared/profile.dart';
+import 'package:fridge/screens/store/store_dashboard.dart';
+import 'package:fridge/screens/store/store_insights.dart';
 import 'package:fridge/utils/constants.dart';
 
-class Root extends StatefulWidget {
-  const Root({super.key});
+class StoreRoot extends StatefulWidget {
+  const StoreRoot({super.key});
 
   @override
-  State<Root> createState() => _RootState();
+  State<StoreRoot> createState() => _StoreRootState();
 }
 
-class _RootState extends State<Root> {
+class _StoreRootState extends State<StoreRoot> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
-    InventoryScreen(),
-    RecipesScreen(),
-    GroceryScreen(),
+    StoreDashboard(),
+    StoreInsights(),
+    GroceryScreen(isStoreUser: true),
     ProfileScreen(),
   ];
 
@@ -41,19 +41,19 @@ class _RootState extends State<Root> {
           type: BottomNavigationBarType.fixed,
           items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Inventory',
+              icon: Icon(Icons.grid_view_outlined),
+              activeIcon: Icon(Icons.grid_view),
+              label: 'Inventory', // Dashboard
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.restaurant_menu_outlined),
-              activeIcon: Icon(Icons.restaurant_menu),
-              label: 'Recipes',
+              icon: Icon(Icons.bar_chart_outlined),
+              activeIcon: Icon(Icons.bar_chart),
+              label: 'Insights',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart_outlined),
-              activeIcon: Icon(Icons.shopping_cart),
-              label: 'Grocery',
+              icon: Icon(Icons.inbox_outlined),
+              activeIcon: Icon(Icons.inbox),
+              label: 'Low Stock',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),

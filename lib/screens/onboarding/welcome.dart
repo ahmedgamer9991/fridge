@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:fridge/utils/constants.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class WelcomeScreen extends StatefulWidget {
+  const WelcomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _WelcomeScreenState extends State<WelcomeScreen> {
   String? selectedUserType;
 
   @override
@@ -25,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   SizedBox(height: 30),
                   Text(
-                    'FridgeMate',
+                    'Eyeventory',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -90,7 +90,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: const Text(
                     'Continue',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),

@@ -3,7 +3,8 @@ import 'package:fridge/utils/constants.dart';
 import 'package:fridge/widgets/widgets.dart';
 
 class GroceryScreen extends StatefulWidget {
-  const GroceryScreen({super.key});
+  final bool isStoreUser;
+  const GroceryScreen({super.key, this.isStoreUser = false});
 
   @override
   State<GroceryScreen> createState() => _GroceryScreenState();
@@ -64,7 +65,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppHeader(
-        title: 'Grocery List',
+        title: widget.isStoreUser ? 'Low Stock Items' : 'Grocery List',
         automaticallyImplyLeading: false,
         actions: [
           IconButton(icon: const Icon(Icons.share_outlined), onPressed: () {}),
@@ -80,18 +81,20 @@ class _GroceryScreenState extends State<GroceryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Section 1: Ingredients from favorite meals
-              const Text(
-                'Ingredients from favorite meals',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+              // Section 1: Ingredients from favorite meals (Home User only)
+              if (!widget.isStoreUser) ...[
+                const Text(
+                  'Ingredients from favorite meals',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              ..._favoriteMealItems.map(_buildGroceryItem),
-              const SizedBox(height: 20),
+                const SizedBox(height: 14),
+                ..._favoriteMealItems.map(_buildGroceryItem),
+                const SizedBox(height: 20),
+              ],
 
               // Section 2: Fridge items that are low-stock
               const Text(

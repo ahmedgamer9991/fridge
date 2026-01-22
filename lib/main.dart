@@ -2,10 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:fridge/firebase_options.dart';
-import 'package:fridge/screens/main/root.dart';
+import 'package:fridge/screens/root.dart';
 import 'package:fridge/screens/inventory/add_item.dart';
 import 'package:fridge/screens/inventory/edit_item.dart';
-import 'package:fridge/screens/onboarding/home.dart';
+import 'package:fridge/screens/onboarding/welcome.dart';
 import 'package:fridge/screens/inventory/item_details.dart';
 import 'package:fridge/screens/shared/loading.dart';
 import 'package:fridge/screens/auth/login.dart';
@@ -86,7 +86,7 @@ class _AuthGateState extends State<AuthGate> {
 
         // Not logged in → show home/onboarding
         if (user == null) {
-          return const HomeScreen();
+          return const WelcomeScreen();
         }
 
         // Logged in but email not verified → show verification screen

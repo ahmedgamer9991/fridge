@@ -273,146 +273,23 @@ class _InventoryScreenState extends State<InventoryScreen> {
     return StreamBuilder<List<InventoryItem>>(
       stream: FirebaseServices().getItems(),
       builder: (context, snapshot) {
-        // if (snapshot.connectionState == ConnectionState.waiting) {
-        //   return _buildLoadingStatsGrid();
-        // }
-
         final items = snapshot.data ?? [];
-
-        int totalItems = items.length;
-        int expiringSoon = items
-            .where((item) => item.status == 'Expiring Soon')
-            .length;
-        int lowStock = items.where(_isLowStock).length;
-        int spoiled = items.where((item) => item.status == 'Spoiled').length;
-
-        final stats = [
-          {
-            'label': 'Total Items',
-            'value': '$totalItems',
-            'icon': Icons.checklist,
-            'color': colorsPrimary,
-            'filterKey': 'all',
+        return StatsGrid(
+          items: items,
+          selectedFilterKey: _selectedStatFilter,
+          onFilterSelected: (key) {
+            setState(() {
+              _selectedStatFilter = key;
+              _selectedCategory = 'All';
+            });
           },
-          {
-            'label': 'Expiring Soon',
-            'value': '$expiringSoon',
-            'icon': Icons.timer,
-            'color': statusExpiring,
-            'filterKey': 'expiring',
-          },
-          {
-            'label': 'Low Stock',
-            'value': '$lowStock',
-            'icon': Icons.shopping_bag,
-            'color': statusLowStock,
-            'filterKey': 'low_stock',
-          },
-          {
-            'label': 'Spoiled/Expired',
-            'value': '$spoiled',
-            'icon': Icons.cancel,
-            'color': statusSpoiled,
-            'filterKey': 'spoiled',
-          },
-        ];
-
-        return Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: stats.map((stat) {
-            final isActive = _selectedStatFilter == stat['filterKey'];
-            final baseColor = stat['color'] as Color;
-            final activeColor = baseColor.withValues(alpha: 0.9);
-
-            return SizedBox(
-              width: (MediaQuery.of(context).size.width - 48) / 2,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    setState(() {
-                      // Toggle filter: if already selected, reset to 'all'
-                      if (_selectedStatFilter == stat['filterKey'] &&
-                          stat['filterKey'] != 'all') {
-                        _selectedStatFilter = 'all';
-                      } else {
-                        _selectedStatFilter = stat['filterKey'] as String;
-                      }
-                      // Reset category filter when stat filter changes
-                      _selectedCategory = 'All';
-                    });
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: Card(
-                    elevation: isActive ? 4.0 : 2.5,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      // side: BorderSide(color: colorsBorder),
-                    ),
-                    color: isActive ? activeColor : baseColor,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            stat['icon'] as IconData,
-                            size: 25,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  stat['value'] as String,
-                                  style: TextStyle(
-                                    fontSize: 25,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  stat['label'] as String,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
         );
       },
     );
   }
 
   Widget _buildScrollableCategories() {
-    final categories = [
-      'All',
-      'Produce',
-      'Dairy',
-      'Meat',
-      'Frozen',
-      'Pantry',
-      'Beverage',
-    ];
+    final categories = ['All', ...itemCategories];
 
     return SizedBox(
       height: 40,

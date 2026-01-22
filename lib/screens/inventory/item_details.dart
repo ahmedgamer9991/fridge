@@ -344,7 +344,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                 _loadItemData();
               });
             },
-            textColor: Colors.black,
+            textColor: Colors.white,
             title: "Edit Item",
           ),
           const SizedBox(height: 12),

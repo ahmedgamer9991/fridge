@@ -46,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // App Title
               Center(
                 child: Text(
-                  'FridgeMate',
+                  'Eyeventory',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,

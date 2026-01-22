@@ -146,7 +146,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                 if (!_isLoading)
                   Text(
                     _emailVerified
-                        ? 'Great! Your email has been verified. You\'ll be redirected to your FridgeMate dashboard shortly.'
+                        ? 'Great! Your email has been verified. You\'ll be redirected to your Eyeventory dashboard shortly.'
                         : 'We sent a verification link to your email address. Please click the link to verify your account.',
                     style: TextStyle(fontSize: 16, color: Colors.grey[700]),
                     textAlign: TextAlign.center,
