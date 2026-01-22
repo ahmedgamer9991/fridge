@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:fridge/widgets/widgets.dart';
 import 'package:fridge/services/firebase_services.dart';
 import 'package:fridge/utils/constants.dart';
+import 'package:fridge/services/notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fridge/utils/helpers.dart';
 
 class AddItemScreen extends StatefulWidget {
   const AddItemScreen({super.key});
@@ -317,7 +320,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
                         // Use a local variable to capture context if needed, but here we can just check mounted
                         try {
-                          await FirebaseServices().addItem(
+                          final docId = await FirebaseServices().addItem(
                             name: name,
                             category: _selectedCategory!,
                             quantity: _quantityController.text.trim().isEmpty
@@ -326,6 +329,36 @@ class _AddItemScreenState extends State<AddItemScreen> {
                             unit: _selectedUnit!,
                             expiryDate: _selectedExpiryDate,
                           );
+
+                          // Schedule Notifications
+                          if (_selectedExpiryDate != null) {
+                            final prefs = await SharedPreferences.getInstance();
+                            final double threshold =
+                                prefs.getDouble('notifyBeforeExpiry') ?? 3.0;
+
+                            // 1. Threshold Warning (e.g., 3 days before)
+                            await NotificationService()
+                                .scheduleExpiryNotification(
+                                  id: AppHelpers.getHashCode(
+                                    '${docId}_warning',
+                                  ),
+                                  itemName: name,
+                                  expiryDate: _selectedExpiryDate!,
+                                  daysBefore: threshold.toInt(),
+                                );
+
+                            // 2. Expiry Date Alert (0 days before - Today)
+                            await NotificationService()
+                                .scheduleExpiryNotification(
+                                  id: AppHelpers.getHashCode(
+                                    '${docId}_expired',
+                                  ),
+                                  itemName: name,
+                                  expiryDate: _selectedExpiryDate!,
+                                  daysBefore: 0,
+                                );
+                          }
+
                           if (!context.mounted) return;
 
                           ScaffoldMessenger.of(context).showSnackBar(

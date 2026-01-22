@@ -5,6 +5,7 @@ import 'package:fridge/widgets/widgets.dart';
 import 'package:fridge/utils/helpers.dart';
 import 'package:fridge/utils/error_utils.dart';
 import 'package:fridge/models/inventory_item.dart';
+import 'package:fridge/services/notification_service.dart';
 
 class ItemDetailsScreen extends StatefulWidget {
   const ItemDetailsScreen({super.key});
@@ -469,6 +470,15 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
               Navigator.pop(dialogContext); // Close dialog
               try {
                 await FirebaseServices().deleteItem(_itemId);
+
+                // Cancel notifications
+                await NotificationService().cancelNotification(
+                  AppHelpers.getHashCode('${_itemId}_warning'),
+                );
+                await NotificationService().cancelNotification(
+                  AppHelpers.getHashCode('${_itemId}_expired'),
+                );
+
                 if (!mounted) return;
 
                 ScaffoldMessenger.of(context).showSnackBar(

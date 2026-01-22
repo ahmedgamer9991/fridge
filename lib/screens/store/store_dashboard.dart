@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fridge/services/firebase_services.dart';
 import 'package:fridge/utils/constants.dart';
+import 'package:fridge/utils/helpers.dart';
 import 'package:fridge/widgets/widgets.dart';
 import 'package:fridge/models/inventory_item.dart';
 
@@ -165,7 +166,7 @@ class _StoreDashboardState extends State<StoreDashboard> {
 
             // 3. Categories (Static - Always Visible)
             SliverToBoxAdapter(child: _buildCategories()),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
             // 4. Fridge Sections (Dependant on Data)
             StreamBuilder<List<InventoryItem>>(
@@ -208,7 +209,7 @@ class _StoreDashboardState extends State<StoreDashboard> {
                       if (fridgeData == null) return const SizedBox.shrink();
                       return _buildFridgeCard(fridgeData);
                     },
-                    childCount: 3, // Fridge A, B, C
+                    childCount: 4, // Fridge A, B, Freezer, Pantry
                   ),
                 );
               },
@@ -267,32 +268,38 @@ class _StoreDashboardState extends State<StoreDashboard> {
 
   Widget _buildCategories() {
     final categories = ['All', ...itemCategories];
+
     return SizedBox(
       height: 40,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         itemCount: categories.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final cat = categories[index];
-          final isSelected = _selectedCategory == cat;
-          return OutlinedButton(
-            onPressed: () => setState(() => _selectedCategory = cat),
-            style: OutlinedButton.styleFrom(
-              backgroundColor: isSelected ? Colors.transparent : Colors.white,
-              side: BorderSide(color: isSelected ? Colors.black : colorsBorder),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+          final category = categories[index];
+          final isSelected = _selectedCategory == category;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: OutlinedButton(
+              onPressed: () => setState(() => _selectedCategory = category),
+              style: OutlinedButton.styleFrom(
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                backgroundColor: isSelected ? Colors.green[50] : Colors.white,
+                side: BorderSide(
+                  color: isSelected ? const Color(0xFFE8F5E9) : colorsBorder,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                foregroundColor: isSelected ? colorsPrimary : Colors.black,
               ),
-              foregroundColor: Colors.black,
-            ),
-            child: Text(
-              cat,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: Colors.black,
-              ),
+              child: Text(category, style: const TextStyle(fontSize: 14)),
             ),
           );
         },
@@ -304,44 +311,48 @@ class _StoreDashboardState extends State<StoreDashboard> {
     int index,
     List<InventoryItem> allItems,
   ) {
-    // Map existing categories to "Fridges" to match the design aesthetics
-
     String title;
     String subtitle;
     List<InventoryItem> fridgeItems;
-    // Color or Image placeholder
     Color color;
 
     if (index == 0) {
-      // Fridge A: Produce (Fruits & Veggies)
-      title = "Fridge A";
+      // Fridge A: Produce
+      title = "Fridge Section A";
       subtitle = "Fruits & Veggies";
       fridgeItems = allItems.where((i) => i.category == 'Produce').toList();
       color = Colors.green.shade100;
     } else if (index == 1) {
-      // Fridge B: Meat
-      title = "Fridge B";
-      subtitle = "Meats & Poultry";
-      fridgeItems = allItems.where((i) => i.category == 'Meat').toList();
-      color = Colors.red.shade100;
-    } else if (index == 2) {
-      // Fridge C: Dairy
-      title = "Fridge C";
-      subtitle = "Dairy Products";
-      fridgeItems = allItems.where((i) => i.category == 'Dairy').toList();
+      // Fridge B: Essentials
+      title = "Fridge Section B";
+      subtitle = "Meats & Dairy";
+      fridgeItems = allItems
+          .where((i) => i.category == 'Meat' || i.category == 'Dairy')
+          .toList();
       color = Colors.blue.shade100;
+    } else if (index == 2) {
+      // Freezer
+      title = "Freezer";
+      subtitle = "Frozen Goods";
+      fridgeItems = allItems.where((i) => i.category == 'Frozen').toList();
+      color = Colors.cyan.shade100;
+    } else if (index == 3) {
+      // Pantry
+      title = "Pantry & Shelves";
+      subtitle = "Dry Goods & Beverages";
+      fridgeItems = allItems
+          .where((i) => i.category == 'Pantry' || i.category == 'Beverage')
+          .toList();
+      color = Colors.orange.shade100;
     } else {
       return null;
     }
-
-    // Only show fridge if it implies items matches filters,
-    // OR show empty stats if strict.
-    // Let's show filtered stats.
 
     int itemCount = fridgeItems.length;
     int expiring = fridgeItems.where((i) => i.status == 'Expiring Soon').length;
     int spoiled = fridgeItems.where((i) => i.status == 'Spoiled').length;
 
+    // Only return if we want to show empty sections? Yes, to show potential storage.
     return {
       'title': title,
       'subtitle': subtitle,
@@ -349,11 +360,13 @@ class _StoreDashboardState extends State<StoreDashboard> {
       'expiring': expiring,
       'spoiled': spoiled,
       'color': color,
-      'items': fridgeItems, // Passed if we want to navigate to details
+      'items': fridgeItems,
     };
   }
 
   Widget _buildFridgeCard(Map<String, dynamic> data) {
+    final List<InventoryItem> items = data['items'] as List<InventoryItem>;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
       decoration: BoxDecoration(
@@ -374,16 +387,14 @@ class _StoreDashboardState extends State<StoreDashboard> {
             height: 120,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: data['color'], // Fallback color
+              color: data['color'],
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(16),
               ),
-              // TODO: Add actual image per design if available
-              // image: DecorationImage(image: ... fit: BoxFit.cover)
             ),
             child: Stack(
               children: [
-                // Gradient overlay for text readability
+                // Gradient overlay
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: const BorderRadius.vertical(
@@ -445,12 +456,10 @@ class _StoreDashboardState extends State<StoreDashboard> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Navigate to details or filtered list
+                      _showFridgeContents(context, data['title'], items);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(
-                        0xFF386641,
-                      ), // Dark green from design
+                      backgroundColor: colorsPrimary,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -465,6 +474,77 @@ class _StoreDashboardState extends State<StoreDashboard> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showFridgeContents(
+    BuildContext context,
+    String title,
+    List<InventoryItem> items,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    title,
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: items.isEmpty
+                      ? Center(
+                          child: Text(
+                            "No items in this section",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: scrollController,
+                          itemCount: items.length,
+                          itemBuilder: (context, index) {
+                            final item = items[index];
+                            return InventoryItemCard(
+                              title: item.name,
+                              subtitle: '${item.quantity} ${item.unit}',
+                              status: item.status,
+                              statusColor: AppHelpers.getStatusColor(
+                                item.status,
+                              ),
+                              expiryText: AppHelpers.formatExpiryDate(
+                                item.expiryDate,
+                              ),
+                              onTap: () {
+                                Navigator.pop(context); // Close sheet
+                                Navigator.pushNamed(
+                                  context,
+                                  '/item-details',
+                                  arguments: item.id,
+                                );
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

@@ -37,4 +37,17 @@ class AppHelpers {
       return 'Expires on ${date.day}/${date.month}/${date.year}';
     }
   }
+
+  // Stable hash code for Strings (since 'str'.hashCode is not stable across restarts in Dart)
+  static int getHashCode(String key) {
+    var hash = 0;
+    for (var i = 0; i < key.length; i++) {
+      hash = 31 * hash + key.codeUnitAt(i);
+      // Keep it to 32-bit integer range if possible, or just let Dart handle it.
+      // Notification IDs need to be 32-bit int.
+      hash = hash & 0xFFFFFFFF;
+    }
+    // Handle int overflow for Dart (just ensure it fits)
+    return hash;
+  }
 }

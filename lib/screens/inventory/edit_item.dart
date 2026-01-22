@@ -4,6 +4,9 @@ import 'package:fridge/widgets/widgets.dart';
 import 'package:fridge/services/firebase_services.dart';
 import 'package:fridge/utils/error_utils.dart';
 import 'package:fridge/models/inventory_item.dart';
+import 'package:fridge/services/notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fridge/utils/helpers.dart';
 
 class EditItemScreen extends StatefulWidget {
   const EditItemScreen({super.key});
@@ -390,6 +393,33 @@ class _EditItemScreenState extends State<EditItemScreen> {
 
     try {
       await FirebaseServices().updateItem(updatedItem);
+
+      // Reschedule Notifications
+      if (_selectedExpiryDate != null) {
+        final prefs = await SharedPreferences.getInstance();
+        final double threshold = prefs.getDouble('notifyBeforeExpiry') ?? 3.0;
+        final docId = updatedItem.id;
+
+        // Cancel old ones just in case (though overwrite works, cancelling ensures clean slate if IDs somehow changed logic)
+        // Actually overwrite is identical ID, so it's fine.
+
+        // 1. Threshold Warning
+        await NotificationService().scheduleExpiryNotification(
+          id: AppHelpers.getHashCode('${docId}_warning'),
+          itemName: name,
+          expiryDate: _selectedExpiryDate!,
+          daysBefore: threshold.toInt(),
+        );
+
+        // 2. Expiry Day Alert
+        await NotificationService().scheduleExpiryNotification(
+          id: AppHelpers.getHashCode('${docId}_expired'),
+          itemName: name,
+          expiryDate: _selectedExpiryDate!,
+          daysBefore: 0,
+        );
+      }
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(

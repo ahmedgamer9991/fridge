@@ -3,6 +3,7 @@ import 'package:fridge/services/firebase_services.dart';
 import 'package:fridge/utils/constants.dart';
 import 'package:fridge/widgets/widgets.dart';
 import 'package:fridge/utils/error_utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -48,11 +49,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _userProfile = profile;
         });
       }
+      await _loadLocalSettings();
     } catch (error) {
       if (mounted) {
         ErrorUtils.showErrorSnackBar(context, ErrorUtils.parseError(error));
       }
     }
+  }
+
+  Future<void> _loadLocalSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _notifyBeforeExpiry = prefs.getDouble('notifyBeforeExpiry') ?? 3.0;
+    });
+  }
+
+  Future<void> _saveNotificationSetting(double value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('notifyBeforeExpiry', value);
   }
 
   @override
@@ -135,8 +149,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     min: 1,
                     max: 7,
                     unit: 'days',
-                    onChanged: (value) =>
-                        setState(() => _notifyBeforeExpiry = value),
+                    onChanged: (value) {
+                      setState(() => _notifyBeforeExpiry = value);
+                      _saveNotificationSetting(value);
+                    },
                   ),
                   const SizedBox(height: 5),
                   const Divider(thickness: .5, indent: 15, endIndent: 15),

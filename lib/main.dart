@@ -14,10 +14,12 @@ import 'package:fridge/screens/auth/signup.dart';
 import 'package:fridge/screens/auth/verify_email.dart';
 import 'package:fridge/services/firebase_services.dart';
 import 'package:fridge/screens/shared/splash_screen.dart';
+import 'package:fridge/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotificationService().init(); // Initialize Notifications
   runApp(const Fridge());
 }
 
