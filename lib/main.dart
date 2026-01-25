@@ -29,7 +29,7 @@ class Fridge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'fridge',
+      title: 'Eyeventory',
       theme: ThemeData(
         splashFactory: NoSplash.splashFactory,
         scaffoldBackgroundColor: Colors.white,
