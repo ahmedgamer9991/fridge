@@ -26,10 +26,28 @@ class NotificationService {
           requestSoundPermission: true,
         );
 
-    const InitializationSettings initializationSettings =
+    // Linux settings
+    final LinuxInitializationSettings initializationSettingsLinux =
+        LinuxInitializationSettings(defaultActionName: 'Open notification');
+
+    // Windows settings
+    // Note: If you receive a compilation error here, ensure you have the latest
+    // version of flutter_local_notifications which supports Windows.
+    // However, the runtime error "Windows settings must be set" guarantees support.
+    const WindowsInitializationSettings initializationSettingsWindows =
+        WindowsInitializationSettings(
+          appName: 'Eyeventory',
+          appUserModelId: 'com.ahmed.eyeventory',
+          guid: '81d9f012-78d3-4675-90d5-6b4507022026',
+        );
+
+    final InitializationSettings initializationSettings =
         InitializationSettings(
           android: initializationSettingsAndroid,
           iOS: initializationSettingsDarwin,
+          macOS: initializationSettingsDarwin, // Use same as iOS
+          linux: initializationSettingsLinux,
+          windows: initializationSettingsWindows,
         );
 
     await flutterLocalNotificationsPlugin.initialize(

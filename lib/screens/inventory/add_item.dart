@@ -334,7 +334,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
                           if (_selectedExpiryDate != null) {
                             final prefs = await SharedPreferences.getInstance();
                             final double threshold =
-                                prefs.getDouble('notifyBeforeExpiry') ?? 3.0;
+                                prefs.getDouble('notifyBeforeExpiry') ??
+                                kDefaultExpiryThreshold;
 
                             // 1. Threshold Warning (e.g., 3 days before)
                             await NotificationService()

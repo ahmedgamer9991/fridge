@@ -1,7 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:Eyeventory/models/inventory_item.dart';
 import 'package:Eyeventory/utils/constants.dart';
 
 class AppHelpers {
+  static bool isLowStock(InventoryItem item) {
+    try {
+      final q = double.parse(item.quantity);
+      if (item.unit == 'units' || item.unit == 'pack') return q <= 2;
+      if (item.unit == 'g' || item.unit == 'ml') return q <= 100;
+      if (item.unit == 'kg' || item.unit == 'L') return q <= 0.5;
+      return q <= 2;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static Color getStatusColor(String status) {
     switch (status) {
       case 'Fresh':

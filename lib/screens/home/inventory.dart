@@ -8,7 +8,8 @@ import 'package:Eyeventory/utils/helpers.dart';
 import 'package:Eyeventory/models/inventory_item.dart';
 
 class InventoryScreen extends StatefulWidget {
-  const InventoryScreen({super.key});
+  final List<InventoryItem>? initialItems;
+  const InventoryScreen({super.key, this.initialItems});
 
   @override
   State<InventoryScreen> createState() => _InventoryScreenState();
@@ -32,8 +33,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Widget _buildInventoryList() {
     return StreamBuilder<List<InventoryItem>>(
       stream: FirebaseServices().getItems(),
+      initialData: widget.initialItems,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const SliverToBoxAdapter(
             child: Center(child: CircularProgressIndicator()),
           );
@@ -103,7 +106,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       case 'expiring':
         return items.where((item) => item.status == 'Expiring Soon').toList();
       case 'low_stock':
-        return items.where(_isLowStock).toList();
+        return items.where((item) => AppHelpers.isLowStock(item)).toList();
       case 'spoiled':
         return items.where((item) => item.status == 'Spoiled').toList();
       default:
@@ -111,27 +114,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     }
   }
 
-  bool _isLowStock(InventoryItem item) {
-    // Basic logic based on unit (mock logic)
-    // You can refine this based on your preferences
-    double quantity;
-    try {
-      quantity = double.parse(item.quantity);
-    } catch (e) {
-      return false; // Skip if quantity is not a number
-    }
-
-    final unit = item.unit;
-
-    if (unit == 'units' || unit == 'pack') {
-      return quantity <= 2;
-    } else if (unit == 'g' || unit == 'ml') {
-      return quantity <= 100;
-    } else if (unit == 'kg' || unit == 'L') {
-      return quantity <= 0.5;
-    }
-    return quantity <= 2;
-  }
+  // Low Stock logic moved to AppHelpers
 
   void _onSearchChanged(String value) {
     // Cancel previous debounce timer

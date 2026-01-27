@@ -8,7 +8,8 @@ import 'package:Eyeventory/widgets/widgets.dart';
 import 'package:Eyeventory/models/inventory_item.dart';
 
 class StoreDashboard extends StatefulWidget {
-  const StoreDashboard({super.key});
+  final List<InventoryItem>? initialItems;
+  const StoreDashboard({super.key, this.initialItems});
 
   @override
   State<StoreDashboard> createState() => _StoreDashboardState();
@@ -74,19 +75,19 @@ class _StoreDashboardState extends State<StoreDashboard> {
         title: _getAppBarTitle(),
         automaticallyImplyLeading: false,
         actions: [
-          if (_selectedStatFilter != 'all' || _selectedCategory != 'All')
+          if (_selectedCategory != 'All')
             IconButton(
               icon: const Icon(Icons.filter_alt_off, color: Colors.grey),
               onPressed: () {
                 setState(() {
-                  _selectedStatFilter = 'all';
+                  _selectedStatFilter = 'all'; // Keep this reset just in case
                   _selectedCategory = 'All';
                   _searchController.clear();
                   _isSearching = false;
                 });
                 _focusNode.unfocus();
               },
-              tooltip: 'Clear all filters',
+              tooltip: 'Clear category filter',
             ),
           if (_isSearching)
             IconButton(
@@ -99,10 +100,6 @@ class _StoreDashboardState extends State<StoreDashboard> {
                 });
               },
             ),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
-          ),
         ],
       ),
       body: SafeArea(
@@ -116,13 +113,15 @@ class _StoreDashboardState extends State<StoreDashboard> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: StreamBuilder<List<InventoryItem>>(
                   stream: _itemsStream,
+                  initialData: widget.initialItems,
                   builder: (context, snapshot) {
                     // If loading, show placeholder or spinner only here?
                     // Or just show stats with 0?
                     // Usually StatsGrid handles empty lists gracefully since we pass list.
                     // But we must handle 'waiting'.
 
-                    if (snapshot.connectionState == ConnectionState.waiting) {
+                    if (snapshot.connectionState == ConnectionState.waiting &&
+                        !snapshot.hasData) {
                       return const SizedBox(
                         height: 100,
                         child: Center(child: CircularProgressIndicator()),
@@ -131,12 +130,7 @@ class _StoreDashboardState extends State<StoreDashboard> {
 
                     return StatsGrid(
                       items: snapshot.data ?? [],
-                      selectedFilterKey: _selectedStatFilter,
-                      onFilterSelected: (key) {
-                        setState(() {
-                          _selectedStatFilter = key;
-                        });
-                      },
+                      // Interaction disabled for store dashboard
                     );
                   },
                 ),
@@ -171,8 +165,10 @@ class _StoreDashboardState extends State<StoreDashboard> {
             // 4. Fridge Sections (Dependant on Data)
             StreamBuilder<List<InventoryItem>>(
               stream: _itemsStream,
+              initialData: widget.initialItems,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    !snapshot.hasData) {
                   return const SliverFillRemaining(
                     child: Center(child: CircularProgressIndicator()),
                   );
@@ -244,26 +240,10 @@ class _StoreDashboardState extends State<StoreDashboard> {
           (_selectedStatFilter == 'expiring' &&
               item.status == 'Expiring Soon') ||
           (_selectedStatFilter == 'spoiled' && item.status == 'Spoiled') ||
-          (_selectedStatFilter == 'low_stock' &&
-              _isLowStock(
-                item,
-              )); // Reusing low stock logic if possible or duplicating
+          (_selectedStatFilter == 'low_stock' && AppHelpers.isLowStock(item));
 
       return matchesQuery && matchesCategory && matchesStat;
     }).toList();
-  }
-
-  // Duplicated generic low stock logic for filtering
-  bool _isLowStock(InventoryItem item) {
-    try {
-      final q = double.parse(item.quantity);
-      if (item.unit == 'units' || item.unit == 'pack') return q <= 2;
-      if (item.unit == 'g' || item.unit == 'ml') return q <= 100;
-      if (item.unit == 'kg' || item.unit == 'L') return q <= 0.5;
-      return q <= 2;
-    } catch (_) {
-      return false;
-    }
   }
 
   Widget _buildCategories() {

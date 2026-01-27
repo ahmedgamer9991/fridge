@@ -7,6 +7,7 @@ const Color colorsBorder = Color(0xFFE0E0E0); // Colors.grey[300]
 const double kDefaultPadding = 24.0;
 const double kItemPadding = 16.0;
 const double kBorderRadius = 8.0;
+const double kDefaultExpiryThreshold = 3.0;
 
 OutlineInputBorder textBorder = OutlineInputBorder(
   borderRadius: BorderRadius.circular(kBorderRadius),

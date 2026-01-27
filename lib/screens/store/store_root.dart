@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:Eyeventory/screens/shared/grocery.dart';
+import 'package:Eyeventory/screens/store/notifications_screen.dart';
 import 'package:Eyeventory/screens/shared/profile.dart';
 import 'package:Eyeventory/screens/store/store_dashboard.dart';
 import 'package:Eyeventory/screens/store/store_insights.dart';
 import 'package:Eyeventory/utils/constants.dart';
 
+import 'package:Eyeventory/models/inventory_item.dart';
+
 class StoreRoot extends StatefulWidget {
-  const StoreRoot({super.key});
+  final List<InventoryItem>? initialItems;
+  const StoreRoot({super.key, this.initialItems});
 
   @override
   State<StoreRoot> createState() => _StoreRootState();
@@ -15,12 +18,18 @@ class StoreRoot extends StatefulWidget {
 class _StoreRootState extends State<StoreRoot> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    StoreDashboard(),
-    StoreInsights(),
-    GroceryScreen(isStoreUser: true),
-    ProfileScreen(),
-  ];
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      StoreDashboard(initialItems: widget.initialItems),
+      StoreInsights(),
+      NotificationsScreen(),
+      ProfileScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,8 +50,8 @@ class _StoreRootState extends State<StoreRoot> {
           type: BottomNavigationBarType.fixed,
           items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.grid_view_outlined),
-              activeIcon: Icon(Icons.grid_view),
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
               label: 'Inventory', // Dashboard
             ),
             BottomNavigationBarItem(
@@ -51,9 +60,9 @@ class _StoreRootState extends State<StoreRoot> {
               label: 'Insights',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.inbox_outlined),
-              activeIcon: Icon(Icons.inbox),
-              label: 'Low Stock',
+              icon: Icon(Icons.notifications_outlined),
+              activeIcon: Icon(Icons.notifications),
+              label: 'Notification',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),

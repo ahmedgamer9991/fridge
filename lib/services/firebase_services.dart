@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Eyeventory/core/errors/exceptions.dart';
 import 'package:Eyeventory/models/inventory_item.dart';
+import 'package:Eyeventory/utils/constants.dart';
 
 class FirebaseServices {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -363,11 +364,17 @@ class FirebaseServices {
     final daysUntilExpiry = expiry.difference(today).inDays;
 
     // 3. Time-based Logic
-    if (daysUntilExpiry < 0) return 'Spoiled';
-    if (daysUntilExpiry <= 3) return 'Expiring Soon';
+    if (daysUntilExpiry < 0) {
+      return 'Spoiled';
+    }
+    if (daysUntilExpiry <= kDefaultExpiryThreshold.toInt()) {
+      return 'Expiring Soon';
+    }
 
     // 4. If time-wise it's Fresh, check if user manually marked as Spoiled
-    if (currentStatus == 'Spoiled') return 'Spoiled';
+    if (currentStatus == 'Spoiled') {
+      return 'Spoiled';
+    }
 
     return 'Fresh';
   }

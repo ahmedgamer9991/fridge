@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:Eyeventory/screens/shared/grocery.dart';
+import 'package:Eyeventory/screens/home/grocery.dart';
 import 'package:Eyeventory/screens/home/inventory.dart';
 import 'package:Eyeventory/screens/shared/profile.dart';
 import 'package:Eyeventory/screens/home/recipes.dart';
 import 'package:Eyeventory/utils/constants.dart';
 
+import 'package:Eyeventory/models/inventory_item.dart';
+
 class HomeRoot extends StatefulWidget {
-  const HomeRoot({super.key});
+  final List<InventoryItem>? initialItems;
+  const HomeRoot({super.key, this.initialItems});
 
   @override
   State<HomeRoot> createState() => _HomeRootState();
@@ -15,12 +18,18 @@ class HomeRoot extends StatefulWidget {
 class _HomeRootState extends State<HomeRoot> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    InventoryScreen(),
-    RecipesScreen(),
-    GroceryScreen(),
-    ProfileScreen(),
-  ];
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      InventoryScreen(initialItems: widget.initialItems),
+      RecipesScreen(),
+      GroceryScreen(),
+      ProfileScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

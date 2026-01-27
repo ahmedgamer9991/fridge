@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:Eyeventory/utils/constants.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -53,7 +52,12 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.kitchen_rounded, size: 100, color: colorsPrimary),
+                Image.asset(
+                  'assets/Logo.png',
+                  width: 150,
+                  height: 150,
+                  fit: BoxFit.contain,
+                ),
                 const SizedBox(height: 16),
                 const Text(
                   'Eyeventory',
@@ -66,7 +70,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Manage your kitchen smart',
+                  'Connect, Share, and Inspire',
                   style: TextStyle(color: Colors.grey[600], fontSize: 16),
                 ),
               ],

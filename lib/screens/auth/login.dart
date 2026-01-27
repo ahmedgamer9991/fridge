@@ -108,25 +108,26 @@ class _LoginScreenState extends State<LoginScreen> {
                             _isLoading = true;
                           });
                           try {
+                            // 1. Sign In
                             await FirebaseServices().signIn(
                               _emailController.text.trim(),
                               _passwordController.text.trim(),
                             );
-                            // ✅ Check if email is verified
-                            // final isVerified = await FirebaseServices()
-                            //     .isEmailVerified();
 
-                            // if (isVerified) {
+                            // 2. Pre-fetch Data so we don't pop to an empty screen
+                            // (AuthGate is also doing this, but we wait here to keep the spinner)
+                            try {
+                              final profile = await FirebaseServices()
+                                  .getUserProfile();
+                              if (profile != null) {
+                                // Just await the fetch, AuthGate handles the rest
+                                await FirebaseServices().getItems().first;
+                              }
+                            } catch (_) {}
+
                             if (!context.mounted) return;
                             Navigator.pop(context);
-                            // } else {
-                            // Navigator.popUntil(context, (route) => route.isFirst);
-                            // }
-                            // ScaffoldMessenger.of(context).showSnackBar(
-                            //   const SnackBar(content: Text('Logging in...')),
-                            // );
                           } catch (e) {
-                            if (!context.mounted) return;
                             setState(() {
                               _isLoading = false;
                             });

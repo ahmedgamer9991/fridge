@@ -16,7 +16,6 @@ class EditItemScreen extends StatefulWidget {
 }
 
 class _EditItemScreenState extends State<EditItemScreen> {
-  // late String _itemId;
   InventoryItem? _itemData;
 
   bool _isLoading = true;
@@ -223,10 +222,6 @@ class _EditItemScreenState extends State<EditItemScreen> {
                               borderSide: BorderSide(color: colorsBorder),
                             ),
                             hintText: 'e.g., 3',
-                            // contentPadding: const EdgeInsets.symmetric(
-                            //   horizontal: 12,
-                            //   vertical: 12,
-                            // ),
                           ),
                         ),
                       ),
@@ -268,10 +263,6 @@ class _EditItemScreenState extends State<EditItemScreen> {
                               borderSide: BorderSide(color: colorsBorder),
                             ),
                             hintText: 'Select Unit',
-                            // contentPadding: const EdgeInsets.symmetric(
-                            //   horizontal: 12,
-                            //   vertical: 12,
-                            // ),
                           ),
                           dropdownColor: Colors.white,
                           icon: const Icon(
@@ -397,7 +388,8 @@ class _EditItemScreenState extends State<EditItemScreen> {
       // Reschedule Notifications
       if (_selectedExpiryDate != null) {
         final prefs = await SharedPreferences.getInstance();
-        final double threshold = prefs.getDouble('notifyBeforeExpiry') ?? 3.0;
+        final double threshold =
+            prefs.getDouble('notifyBeforeExpiry') ?? kDefaultExpiryThreshold;
         final docId = updatedItem.id;
 
         // Cancel old ones just in case (though overwrite works, cancelling ensures clean slate if IDs somehow changed logic)
