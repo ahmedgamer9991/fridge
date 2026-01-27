@@ -1,11 +1,11 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
 add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-project(fridge LANGUAGES CXX)
+project(Eyeventory LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "fridge")
+set(BINARY_NAME "Eyeventory")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:fridge/core/errors/exceptions.dart';
-import 'package:fridge/utils/constants.dart';
+import 'package:Eyeventory/core/errors/exceptions.dart';
+import 'package:Eyeventory/utils/constants.dart';
 
 class ErrorUtils {
   static void showErrorSnackBar(BuildContext context, String message) {

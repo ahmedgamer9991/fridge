@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:fridge/widgets/widgets.dart';
-import 'package:fridge/services/firebase_services.dart';
-import 'package:fridge/utils/constants.dart';
-import 'package:fridge/services/notification_service.dart';
+import 'package:Eyeventory/widgets/widgets.dart';
+import 'package:Eyeventory/services/firebase_services.dart';
+import 'package:Eyeventory/utils/constants.dart';
+import 'package:Eyeventory/services/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fridge/utils/helpers.dart';
+import 'package:Eyeventory/utils/helpers.dart';
 
 class AddItemScreen extends StatefulWidget {
   const AddItemScreen({super.key});

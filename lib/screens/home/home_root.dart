@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:fridge/screens/shared/grocery.dart';
-import 'package:fridge/screens/home/inventory.dart';
-import 'package:fridge/screens/shared/profile.dart';
-import 'package:fridge/screens/home/recipes.dart';
-import 'package:fridge/utils/constants.dart';
+import 'package:Eyeventory/screens/shared/grocery.dart';
+import 'package:Eyeventory/screens/home/inventory.dart';
+import 'package:Eyeventory/screens/shared/profile.dart';
+import 'package:Eyeventory/screens/home/recipes.dart';
+import 'package:Eyeventory/utils/constants.dart';
 
 class HomeRoot extends StatefulWidget {
   const HomeRoot({super.key});

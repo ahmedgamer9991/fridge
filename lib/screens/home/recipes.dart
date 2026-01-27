@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:fridge/utils/constants.dart';
-import 'package:fridge/widgets/widgets.dart';
+import 'package:Eyeventory/utils/constants.dart';
+import 'package:Eyeventory/widgets/widgets.dart';
 
 class RecipesScreen extends StatefulWidget {
   const RecipesScreen({super.key});

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fridge/utils/constants.dart';
+import 'package:Eyeventory/utils/constants.dart';
 
 enum AppButtonType { primary, secondary }
 

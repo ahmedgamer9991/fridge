@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fridge/core/errors/exceptions.dart';
-import 'package:fridge/models/inventory_item.dart';
+import 'package:Eyeventory/core/errors/exceptions.dart';
+import 'package:Eyeventory/models/inventory_item.dart';
 
 class FirebaseServices {
   final FirebaseAuth _auth = FirebaseAuth.instance;

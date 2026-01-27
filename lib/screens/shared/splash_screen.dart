@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fridge/utils/constants.dart';
+import 'package:Eyeventory/utils/constants.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -53,10 +53,10 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.kitchen_rounded , size: 100, color: colorsPrimary),
+                Icon(Icons.kitchen_rounded, size: 100, color: colorsPrimary),
                 const SizedBox(height: 16),
                 const Text(
-                  'Fridge',
+                  'Eyeventory',
                   style: TextStyle(
                     color: Colors.black87,
                     fontSize: 40,

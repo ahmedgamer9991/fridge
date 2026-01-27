@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:fridge/screens/home/home_root.dart';
-import 'package:fridge/screens/store/store_root.dart';
-import 'package:fridge/services/firebase_services.dart';
-import 'package:fridge/screens/shared/loading.dart';
+import 'package:Eyeventory/screens/home/home_root.dart';
+import 'package:Eyeventory/screens/store/store_root.dart';
+import 'package:Eyeventory/services/firebase_services.dart';
+import 'package:Eyeventory/screens/shared/loading.dart';
 
 class Root extends StatefulWidget {
   const Root({super.key});

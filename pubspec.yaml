@@ -1,5 +1,5 @@
-name: fridge
-description: "A new Flutter project."
+name: Eyeventory
+description: "Eyeventory is a smart, intuitive inventory management application built with Flutter and Firebase. It helps you keep track of your groceries, reduce food waste, and manage your kitchen efficiently."
 publish_to: "none"
 version: 0.1.0
 

@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:fridge/services/firebase_services.dart';
-import 'package:fridge/utils/constants.dart';
-import 'package:fridge/widgets/widgets.dart';
-import 'package:fridge/utils/error_utils.dart';
+import 'package:Eyeventory/services/firebase_services.dart';
+import 'package:Eyeventory/utils/constants.dart';
+import 'package:Eyeventory/widgets/widgets.dart';
+import 'package:Eyeventory/utils/error_utils.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   const VerifyEmailScreen({super.key});

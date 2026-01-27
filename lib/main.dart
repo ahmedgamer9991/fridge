@@ -1,20 +1,20 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:fridge/firebase_options.dart';
-import 'package:fridge/screens/root.dart';
-import 'package:fridge/screens/inventory/add_item.dart';
-import 'package:fridge/screens/inventory/edit_item.dart';
-import 'package:fridge/screens/onboarding/welcome.dart';
-import 'package:fridge/screens/inventory/item_details.dart';
-import 'package:fridge/screens/shared/loading.dart';
-import 'package:fridge/screens/auth/login.dart';
-import 'package:fridge/screens/auth/reset_password.dart';
-import 'package:fridge/screens/auth/signup.dart';
-import 'package:fridge/screens/auth/verify_email.dart';
-import 'package:fridge/services/firebase_services.dart';
-import 'package:fridge/screens/shared/splash_screen.dart';
-import 'package:fridge/services/notification_service.dart';
+import 'package:Eyeventory/firebase_options.dart';
+import 'package:Eyeventory/screens/root.dart';
+import 'package:Eyeventory/screens/inventory/add_item.dart';
+import 'package:Eyeventory/screens/inventory/edit_item.dart';
+import 'package:Eyeventory/screens/onboarding/welcome.dart';
+import 'package:Eyeventory/screens/inventory/item_details.dart';
+import 'package:Eyeventory/screens/shared/loading.dart';
+import 'package:Eyeventory/screens/auth/login.dart';
+import 'package:Eyeventory/screens/auth/reset_password.dart';
+import 'package:Eyeventory/screens/auth/signup.dart';
+import 'package:Eyeventory/screens/auth/verify_email.dart';
+import 'package:Eyeventory/services/firebase_services.dart';
+import 'package:Eyeventory/screens/shared/splash_screen.dart';
+import 'package:Eyeventory/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

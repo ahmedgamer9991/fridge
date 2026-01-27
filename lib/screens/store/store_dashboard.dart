@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:fridge/services/firebase_services.dart';
-import 'package:fridge/utils/constants.dart';
-import 'package:fridge/utils/helpers.dart';
-import 'package:fridge/widgets/widgets.dart';
-import 'package:fridge/models/inventory_item.dart';
+import 'package:Eyeventory/services/firebase_services.dart';
+import 'package:Eyeventory/utils/constants.dart';
+import 'package:Eyeventory/utils/helpers.dart';
+import 'package:Eyeventory/widgets/widgets.dart';
+import 'package:Eyeventory/models/inventory_item.dart';
 
 class StoreDashboard extends StatefulWidget {
   const StoreDashboard({super.key});

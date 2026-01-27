@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:fridge/utils/constants.dart';
-import 'package:fridge/widgets/widgets.dart';
-import 'package:fridge/services/firebase_services.dart';
+import 'package:Eyeventory/utils/constants.dart';
+import 'package:Eyeventory/widgets/widgets.dart';
+import 'package:Eyeventory/services/firebase_services.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

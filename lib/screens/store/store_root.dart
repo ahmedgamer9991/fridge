@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:fridge/screens/shared/grocery.dart';
-import 'package:fridge/screens/shared/profile.dart';
-import 'package:fridge/screens/store/store_dashboard.dart';
-import 'package:fridge/screens/store/store_insights.dart';
-import 'package:fridge/utils/constants.dart';
+import 'package:Eyeventory/screens/shared/grocery.dart';
+import 'package:Eyeventory/screens/shared/profile.dart';
+import 'package:Eyeventory/screens/store/store_dashboard.dart';
+import 'package:Eyeventory/screens/store/store_insights.dart';
+import 'package:Eyeventory/utils/constants.dart';
 
 class StoreRoot extends StatefulWidget {
   const StoreRoot({super.key});
