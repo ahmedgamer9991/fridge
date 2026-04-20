@@ -93,6 +93,7 @@ class _AuthGateState extends State<AuthGate> {
           _user = null;
           _userRole = null;
           _initialItems = null;
+          _isBootstrapComplete = true;
         });
         return;
       }

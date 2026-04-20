@@ -13,6 +13,8 @@ class NotificationService {
   NotificationService._internal();
 
   Future<void> init() async {
+    if (kIsWeb) return;
+
     tz.initializeTimeZones();
 
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -71,6 +73,8 @@ class NotificationService {
     required DateTime expiryDate,
     required int daysBefore,
   }) async {
+    if (kIsWeb) return;
+
     // Calculate notification date
     final notificationDate = expiryDate.subtract(Duration(days: daysBefore));
 
@@ -125,10 +129,12 @@ class NotificationService {
   }
 
   Future<void> cancelNotification(int id) async {
+    if (kIsWeb) return;
     await flutterLocalNotificationsPlugin.cancel(id);
   }
 
   Future<void> cancelAll() async {
+    if (kIsWeb) return;
     await flutterLocalNotificationsPlugin.cancelAll();
   }
 }
