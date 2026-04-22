@@ -166,17 +166,10 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: colorsBorder),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.local_drink_outlined, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 8),
-          Text(
-            'Item image will appear here',
-            style: TextStyle(fontSize: 14, color: colorsSecondary),
-          ),
-        ],
+        image: const DecorationImage(
+          image: AssetImage('assets/milk_test.png'),
+          fit: BoxFit.cover,
+        ),
       ),
     );
   }

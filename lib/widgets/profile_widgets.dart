@@ -26,18 +26,20 @@ class UserProfileCard extends StatelessWidget {
                   CircleAvatar(
                     radius: 40,
                     backgroundColor: Colors.grey[200],
-                    child: Image.asset(
-                      'john_doe.png',
-                      width: 64,
-                      height: 64,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(
-                          Icons.person,
-                          color: Colors.grey,
-                          size: 48,
-                        );
-                      },
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/profile_pic_test.jpg',
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.person,
+                            color: Colors.grey,
+                            size: 48,
+                          );
+                        },
+                      ),
                     ),
                   ),
                   const SizedBox(height: 5),

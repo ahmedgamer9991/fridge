@@ -39,22 +39,34 @@ class InventoryItemCard extends StatelessWidget {
           child: Row(
             children: [
               // Image Placeholder
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: Colors.grey[200],
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: imageUrl != null
                     ? ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(12),
                         child: Image.network(
                           imageUrl!,
-                          width: 48,
-                          height: 48,
+                          width: 72,
+                          height: 72,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Icon(Icons.local_drink, color: Colors.grey[700]),
                         ),
                       )
-                    : Icon(Icons.local_drink, color: Colors.grey[700]),
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          'assets/milk_test.png',
+                          width: 72,
+                          height: 72,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
               ),
               const SizedBox(width: 12),
               // Content

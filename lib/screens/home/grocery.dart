@@ -16,19 +16,19 @@ class _GroceryScreenState extends State<GroceryScreen> {
     {
       'name': 'Organic Milk',
       'quantity': '1 gallon',
-      'image': 'organic_milk.png',
+      'image': 'assets/milk_test.png',
       'isChecked': false,
     },
     {
       'name': 'Fresh Strawberries',
       'quantity': '1 lb',
-      'image': 'strawberries.png',
+      'image': 'assets/apple_test.png',
       'isChecked': false,
     },
     {
       'name': 'Ground Beef (90/10)',
       'quantity': '1.5 lbs',
-      'image': 'ground_beef.png',
+      'image': 'assets/milk_test.png',
       'isChecked': true,
     },
   ];
@@ -38,25 +38,25 @@ class _GroceryScreenState extends State<GroceryScreen> {
     {
       'name': 'Eggs (Large)',
       'quantity': '1 dozen',
-      'image': 'eggs.png',
+      'image': 'assets/apple_test.png',
       'isChecked': false,
     },
     {
       'name': 'Spinach',
       'quantity': '1 bag',
-      'image': 'spinach.png',
+      'image': 'assets/apple_test.png',
       'isChecked': false,
     },
     {
       'name': 'Parmesan Cheese',
       'quantity': '1 block',
-      'image': 'parmesan_cheese.png',
+      'image': 'assets/milk_test.png',
       'isChecked': false,
     },
     {
       'name': 'Unsalted Butter',
       'quantity': '1 lb',
-      'image': 'butter.png',
+      'image': 'assets/milk_test.png',
       'isChecked': false,
     },
   ];
@@ -145,21 +145,28 @@ class _GroceryScreenState extends State<GroceryScreen> {
         ),
         title: Row(
           children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: Colors.grey[200],
-              child: Image.asset(
-                item['image'] as String,
-                width: 32,
-                height: 32,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(
-                    Icons.food_bank_outlined,
-                    color: colorsSecondary,
-                    size: 24,
-                  );
-                },
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.grey[200],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  item['image'] as String,
+                  width: 56,
+                  height: 56,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(
+                      Icons.food_bank_outlined,
+                      color: colorsSecondary,
+                      size: 24,
+                    );
+                  },
+                ),
               ),
             ),
             const SizedBox(width: 12),

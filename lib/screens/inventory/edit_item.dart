@@ -106,22 +106,10 @@ class _EditItemScreenState extends State<EditItemScreen> {
                     color: Colors.grey[100],
                     border: Border.all(color: colorsBorder),
                     borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.add_a_photo_outlined,
-                        color: Colors.grey[500],
-                        size: 48,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Upload or take a photo of the item',
-                        style: TextStyle(fontSize: 14, color: colorsSecondary),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                    image: const DecorationImage(
+                      image: AssetImage('assets/milk_test.png'),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),

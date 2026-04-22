@@ -182,7 +182,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
                                   child: Image.asset(
-                                    meal['image'] as String,
+                                    'assets/recipe_test.png',
                                     width: 160,
                                     height: 180,
                                     fit: BoxFit.cover,
@@ -296,7 +296,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
                                 top: Radius.circular(12),
                               ),
                               child: Image.asset(
-                                recipe['image'] as String,
+                                'assets/recipe_test.png',
                                 width: double.infinity,
                                 height: 180,
                                 fit: BoxFit.cover,
