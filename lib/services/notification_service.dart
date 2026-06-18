@@ -15,56 +15,60 @@ class NotificationService {
   Future<void> init() async {
     if (kIsWeb) return;
 
-    tz.initializeTimeZones();
+    try {
+      tz.initializeTimeZones();
 
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    // Darwin (iOS) settings
-    const DarwinInitializationSettings initializationSettingsDarwin =
-        DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true,
-        );
+      // Darwin (iOS) settings
+      const DarwinInitializationSettings initializationSettingsDarwin =
+          DarwinInitializationSettings(
+            requestAlertPermission: true,
+            requestBadgePermission: true,
+            requestSoundPermission: true,
+          );
 
-    // Linux settings
-    final LinuxInitializationSettings initializationSettingsLinux =
-        LinuxInitializationSettings(defaultActionName: 'Open notification');
+      // Linux settings
+      final LinuxInitializationSettings initializationSettingsLinux =
+          LinuxInitializationSettings(defaultActionName: 'Open notification');
 
-    // Windows settings
-    // Note: If you receive a compilation error here, ensure you have the latest
-    // version of flutter_local_notifications which supports Windows.
-    // However, the runtime error "Windows settings must be set" guarantees support.
-    const WindowsInitializationSettings initializationSettingsWindows =
-        WindowsInitializationSettings(
-          appName: 'Eyeventory',
-          appUserModelId: 'com.ahmed.eyeventory',
-          guid: '81d9f012-78d3-4675-90d5-6b4507022026',
-        );
+      // Windows settings
+      // Note: If you receive a compilation error here, ensure you have the latest
+      // version of flutter_local_notifications which supports Windows.
+      // However, the runtime error "Windows settings must be set" guarantees support.
+      const WindowsInitializationSettings initializationSettingsWindows =
+          WindowsInitializationSettings(
+            appName: 'Eyeventory',
+            appUserModelId: 'com.ahmed.eyeventory',
+            guid: '81d9f012-78d3-4675-90d5-6b4507022026',
+          );
 
-    final InitializationSettings initializationSettings =
-        InitializationSettings(
-          android: initializationSettingsAndroid,
-          iOS: initializationSettingsDarwin,
-          macOS: initializationSettingsDarwin, // Use same as iOS
-          linux: initializationSettingsLinux,
-          windows: initializationSettingsWindows,
-        );
+      final InitializationSettings initializationSettings =
+          InitializationSettings(
+            android: initializationSettingsAndroid,
+            iOS: initializationSettingsDarwin,
+            macOS: initializationSettingsDarwin, // Use same as iOS
+            linux: initializationSettingsLinux,
+            windows: initializationSettingsWindows,
+          );
 
-    await flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) async {
-        // Handle notification tap
-      },
-    );
+      await flutterLocalNotificationsPlugin.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) async {
+          // Handle notification tap
+        },
+      );
 
-    // Request permissions for Android 13+
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.requestNotificationsPermission();
+      // Request permissions for Android 13+
+      await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.requestNotificationsPermission();
+    } catch (e) {
+      debugPrint("Failed to initialize NotificationService: $e");
+    }
   }
 
   Future<void> scheduleExpiryNotification({

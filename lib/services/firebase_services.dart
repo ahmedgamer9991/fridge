@@ -204,14 +204,14 @@ class FirebaseServices {
   static String? activeFridgeId;
 
   Future<String> getActiveFridgeId() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? fridgeId = prefs.getString('active_fridge_id');
-    
     final User? user = _auth.currentUser;
     if (user == null) {
       throw Exception('No authenticated user session found');
     }
 
+    final prefs = await SharedPreferences.getInstance();
+    String? fridgeId = prefs.getString('active_fridge_id_${user.uid}');
+    
     if (fridgeId == null) {
       final QuerySnapshot query = await _firestore
           .collection('fridges')
@@ -220,7 +220,7 @@ class FirebaseServices {
           
       if (query.docs.isNotEmpty) {
         fridgeId = query.docs.first.id;
-        await prefs.setString('active_fridge_id', fridgeId);
+        await prefs.setString('active_fridge_id_${user.uid}', fridgeId);
       } else {
         fridgeId = await createDefaultFridgeForUser(user.uid, user.displayName ?? 'My Fridge');
       }
@@ -247,7 +247,7 @@ class FirebaseServices {
       'updatedAt': FieldValue.serverTimestamp(),
     });
     
-    await prefs.setString('active_fridge_id', docRef.id);
+    await prefs.setString('active_fridge_id_$userId', docRef.id);
     activeFridgeId = docRef.id;
     return docRef.id;
   }
@@ -452,8 +452,11 @@ class ActiveFridgeNotifier extends StateNotifier<AsyncValue<String?>> {
   Future<void> setActiveFridge(String fridgeId) async {
     state = const AsyncValue.loading();
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('active_fridge_id', fridgeId);
+      final user = ref.read(authChangesProvider).value;
+      if (user != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('active_fridge_id_${user.uid}', fridgeId);
+      }
       FirebaseServices.activeFridgeId = fridgeId;
       state = AsyncValue.data(fridgeId);
     } catch (e, stack) {
@@ -463,6 +466,7 @@ class ActiveFridgeNotifier extends StateNotifier<AsyncValue<String?>> {
 }
 
 final activeFridgeIdProvider = StateNotifierProvider<ActiveFridgeNotifier, AsyncValue<String?>>((ref) {
+  ref.watch(authChangesProvider);
   return ActiveFridgeNotifier(ref);
 });
 

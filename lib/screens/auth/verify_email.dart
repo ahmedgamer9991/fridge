@@ -53,6 +53,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
       if (isVerified) {
         // ✅ FIX: Force the stream in main.dart to update
         await ref.read(firebaseServicesProvider).refreshUserStream();
+        ref.invalidate(authChangesProvider);
       }
       if (mounted) {
         setState(() {

@@ -303,7 +303,7 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
       title = "Pantry & Shelves";
       subtitle = "Dry Goods & Beverages";
       fridgeItems = allItems
-          .where((i) => i.category == 'Pantry' || i.category == 'Beverage')
+          .where((i) => i.category == 'Pantry' || i.category == 'Beverage' || i.category == 'Others')
           .toList();
       color = Colors.orange.shade100;
     } else {
