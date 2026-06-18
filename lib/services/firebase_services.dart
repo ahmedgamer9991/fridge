@@ -53,7 +53,7 @@ class FirebaseServices {
         });
 
         // 3. Create default fridge document
-        await createDefaultFridgeForUser(user.uid, name);
+        await createDefaultFridgeForUser(user.uid, name, role: role);
 
         return user.uid;
       } else {
@@ -222,18 +222,33 @@ class FirebaseServices {
         fridgeId = query.docs.first.id;
         await prefs.setString('active_fridge_id_${user.uid}', fridgeId);
       } else {
-        fridgeId = await createDefaultFridgeForUser(user.uid, user.displayName ?? 'My Fridge');
+        String ownerName = 'Owner';
+        String role = 'home';
+        try {
+          final profile = await getUserProfile();
+          if (profile != null) {
+            if (profile['name'] != null) {
+              ownerName = profile['name'];
+            }
+            if (profile['role'] != null) {
+              role = profile['role'];
+            }
+          } else if (user.displayName != null) {
+            ownerName = user.displayName!;
+          }
+        } catch (_) {}
+        fridgeId = await createDefaultFridgeForUser(user.uid, ownerName, role: role);
       }
     }
     activeFridgeId = fridgeId;
     return fridgeId;
   }
 
-  Future<String> createDefaultFridgeForUser(String userId, String userName) async {
+  Future<String> createDefaultFridgeForUser(String userId, String userName, {String role = 'home'}) async {
     final prefs = await SharedPreferences.getInstance();
     final DocumentReference docRef = await _firestore.collection('fridges').add({
-      'name': 'My Fridge',
-      'type': 'home',
+      'name': role == 'store' ? 'My Store' : 'My Fridge',
+      'type': role,
       'ownerId': userId,
       'authorizedUsers': [userId],
       'membersMetadata': {
