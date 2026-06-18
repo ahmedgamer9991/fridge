@@ -328,29 +328,29 @@ class _ItemDetailsScreenState extends ConsumerState<ItemDetailsScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Mark as Consumed Button
-          _actionButton(
-            onPressed: () {
-              _updateItemStatus("Consumed");
-            },
-            backgroundColor: Colors.white,
-            icon: Icons.check_box_outlined,
-            textColor: Colors.black,
-            title: "Mark as Consumed",
-          ),
-          const SizedBox(height: 12),
+          // // Mark as Consumed Button
+          // _actionButton(
+          //   onPressed: () {
+          //     _updateItemStatus("Consumed");
+          //   },
+          //   backgroundColor: Colors.white,
+          //   icon: Icons.check_box_outlined,
+          //   textColor: Colors.black,
+          //   title: "Mark as Consumed",
+          // ),
+          // const SizedBox(height: 12),
 
-          // Mark as Thrown Away Button
-          _actionButton(
-            onPressed: () {
-              _updateItemStatus("Thrown Away");
-            },
-            backgroundColor: Colors.white,
-            icon: Icons.delete,
-            textColor: Colors.black,
-            title: "Mark as Thrown Away",
-          ),
-          const SizedBox(height: 12),
+          // // Mark as Thrown Away Button
+          // _actionButton(
+          //   onPressed: () {
+          //     _updateItemStatus("Thrown Away");
+          //   },
+          //   backgroundColor: Colors.white,
+          //   icon: Icons.delete,
+          //   textColor: Colors.black,
+          //   title: "Mark as Thrown Away",
+          // ),
+          // const SizedBox(height: 12),
 
           // Delete Button
           _actionButton(
@@ -410,25 +410,25 @@ class _ItemDetailsScreenState extends ConsumerState<ItemDetailsScreen> {
     );
   }
 
-  Future<void> _updateItemStatus(String status) async {
-    if (_itemData == null) return;
-    try {
-      final updatedItem = _itemData!.copyWith(status: status);
-      await ref.read(firebaseServicesProvider).updateItem(updatedItem);
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Item marked as $status'),
-          backgroundColor: colorsPrimary,
-        ),
-      );
-      Navigator.pop(context);
-    } catch (error) {
-      if (!mounted) return;
-      ErrorUtils.showErrorSnackBar(context, ErrorUtils.parseError(error));
-    }
-  }
+  // Future<void> _updateItemStatus(String status) async {
+  //   if (_itemData == null) return;
+  //   try {
+  //     final updatedItem = _itemData!.copyWith(status: status);
+  //     await ref.read(firebaseServicesProvider).updateItem(updatedItem);
+  //     if (!mounted) return;
+  //
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Item marked as $status'),
+  //         backgroundColor: colorsPrimary,
+  //       ),
+  //     );
+  //     Navigator.pop(context);
+  //   } catch (error) {
+  //     if (!mounted) return;
+  //     ErrorUtils.showErrorSnackBar(context, ErrorUtils.parseError(error));
+  //   }
+  // }
 
   void _showDeleteConfirmation() {
     showDialog(

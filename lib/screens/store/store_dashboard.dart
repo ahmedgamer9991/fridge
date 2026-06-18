@@ -63,7 +63,7 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
           .key;
       return 'Showing: $filterName';
     }
-    return 'My Home Fridge';
+    return 'My Store';
   }
 
   @override

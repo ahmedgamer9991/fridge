@@ -115,18 +115,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               _passwordController.text.trim(),
                             );
 
-                            // 2. Pre-fetch Data so we don't pop to an empty screen
-                            // (AuthGate is also doing this, but we wait here to keep the spinner)
-                            try {
-                              final profile = await ref.read(firebaseServicesProvider)
-                                  .getUserProfile();
-                              if (profile != null) {
-                                // Fetch and cache the new user's active fridge ID first
-                                await ref.read(firebaseServicesProvider).getActiveFridgeId();
-                                // Just await the fetch, AuthGate handles the rest
-                                await ref.read(firebaseServicesProvider).getItems().first;
-                              }
-                            } catch (_) {}
+                            // 2. Sign-in succeeded. AuthGate handles data loading
+                            // behind the SplashScreen, so we just pop back.
 
                             if (!context.mounted) return;
                             Navigator.pop(context);

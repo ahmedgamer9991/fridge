@@ -20,7 +20,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   final _focusNode = FocusNode();
   Timer? _debounce;
-  final List<InventoryItem> _allItems = [];
+
   bool _isSearching = false;
   String _selectedStatFilter = 'all';
   final Map<String, String> _statFilterMap = {
@@ -37,11 +37,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
       );
     }
 
-    // Store all items for search
-    if (!_isSearching && items.isNotEmpty) {
-      _allItems.clear();
-      _allItems.addAll(items);
-    }
+
 
     // Apply search filter
     final filteredItems = _filterItems(items);
@@ -117,9 +113,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     });
   }
 
-  String _getAppBarTitle() {
+  String _getAppBarTitle(List<InventoryItem> items) {
     if (_isSearching) {
-      return '${_filterItems(_allItems).length} results';
+      return '${_filterItems(items).length} results';
     }
 
     if (_selectedStatFilter != 'all') {
@@ -140,7 +136,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
 
     return Scaffold(
       appBar: AppHeader(
-        title: _getAppBarTitle(),
+        title: _getAppBarTitle(items),
         automaticallyImplyLeading: false,
         actions: [
           if (_selectedStatFilter != 'all' || _selectedCategory != 'All')

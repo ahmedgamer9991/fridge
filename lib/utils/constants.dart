@@ -31,6 +31,7 @@ const List<String> itemCategories = [
   'Frozen',
   'Pantry',
   'Beverage',
+  'Others',
 ];
 
 // Item Units

@@ -52,9 +52,7 @@ class FirebaseServices {
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
-        // 3. Create default fridge document
-        await createDefaultFridgeForUser(user.uid, name, role: role);
-
+        // 3. Create default fridge document (Delegated to getActiveFridgeId fallback to prevent race condition)
         return user.uid;
       } else {
         throw AuthException('User user creation returned null');
@@ -330,7 +328,14 @@ class FirebaseServices {
       return snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
         String status = _calculateStatus(data);
-        final modelData = {...data, 'status': status};
+        // Inject computed status into userOverrides so fromMap() picks it up
+        // (fromMap reads userOverrides['status'] first, which would otherwise
+        //  be the hardcoded 'Fresh' from addItem())
+        final userOverrides = Map<String, dynamic>.from(
+          data['userOverrides'] as Map<String, dynamic>? ?? {},
+        );
+        userOverrides['status'] = status;
+        final modelData = {...data, 'userOverrides': userOverrides};
         return InventoryItem.fromMap(modelData, doc.id);
       }).toList();
     });
@@ -390,33 +395,44 @@ class FirebaseServices {
 
     final data = doc.data()!;
     String status = _calculateStatus(data);
-    final modelData = {...data, 'status': status};
+    final userOverrides = Map<String, dynamic>.from(
+      data['userOverrides'] as Map<String, dynamic>? ?? {},
+    );
+    userOverrides['status'] = status;
+    final modelData = {...data, 'userOverrides': userOverrides};
 
     return InventoryItem.fromMap(modelData, doc.id);
   }
 
-  // Helper method to calculate status (reuse your existing logic)
+  // Helper method to calculate status from raw Firestore document data.
+  // Resolves fields from nested userOverrides/detected maps (matching fromMap).
   String _calculateStatus(Map<String, dynamic> data) {
-    // 1. Check if manually marked with a final status
-    final currentStatus = data["status"];
-    if (currentStatus == 'Consumed' || currentStatus == 'Thrown Away') {
-      return currentStatus;
-    }
+    final userOverrides = data['userOverrides'] as Map<String, dynamic>? ?? {};
+    final detected = data['detected'] as Map<String, dynamic>? ?? {};
 
-    final expiryDate = (data['expiryDate'] as Timestamp?)?.toDate();
+    // Resolve current status from nested structure
+    final currentStatus = userOverrides['status'] as String? ??
+        detected['freshness'] as String? ??
+        data['status'] as String?;
+
+    // Resolve expiry date from nested structure
+    final expiryDate = (userOverrides['expiryDate'] as Timestamp?)?.toDate() ??
+        (detected['expiryDate'] as Timestamp?)?.toDate() ??
+        (data['expiryDate'] as Timestamp?)?.toDate();
+
     if (expiryDate == null) {
       // If no date, check if manually marked as Spoiled
       return (currentStatus == 'Spoiled') ? 'Spoiled' : 'Fresh';
     }
 
-    // 2. Normalize dates to midnight for accurate day comparison
+    // Normalize dates to midnight for accurate day comparison
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final expiry = DateTime(expiryDate.year, expiryDate.month, expiryDate.day);
 
     final daysUntilExpiry = expiry.difference(today).inDays;
 
-    // 3. Time-based Logic
+    // Time-based Logic
     if (daysUntilExpiry < 0) {
       return 'Spoiled';
     }
@@ -424,7 +440,7 @@ class FirebaseServices {
       return 'Expiring Soon';
     }
 
-    // 4. If time-wise it's Fresh, check if user manually marked as Spoiled
+    // If time-wise it's Fresh, check if user manually marked as Spoiled
     if (currentStatus == 'Spoiled') {
       return 'Spoiled';
     }
