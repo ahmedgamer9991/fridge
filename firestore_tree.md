@@ -18,7 +18,6 @@ ROOT
           ├── 🔹 type: "home" // "home" or "store"
           ├── 🔹 ownerId: "{userId}" // Primary creator/admin
           │
-          │  // 👥 Solution 1: Map containing UIDs and user metadata (Replaces authorizedUsers array)
           ├── 🔹 membersMetadata: {
           │      "{userId_1}": { "name": "Ahmed", "role": "admin" },
           │      "{userId_2}": { "name": "Mom", "role": "viewer" }
