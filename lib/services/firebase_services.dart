@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Eyeventory/core/errors/exceptions.dart';
 import 'package:Eyeventory/models/inventory_item.dart';
 import 'package:Eyeventory/utils/constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FirebaseServices {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -49,6 +50,9 @@ class FirebaseServices {
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
+
+        // 3. Create default fridge document
+        await createDefaultFridgeForUser(user.uid, name);
 
         return user.uid;
       } else {
@@ -196,6 +200,57 @@ class FirebaseServices {
     }
   }
 
+  static String? activeFridgeId;
+
+  Future<String> getActiveFridgeId() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? fridgeId = prefs.getString('active_fridge_id');
+    
+    final User? user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('No authenticated user session found');
+    }
+
+    if (fridgeId == null) {
+      final QuerySnapshot query = await _firestore
+          .collection('fridges')
+          .where('authorizedUsers', arrayContains: user.uid)
+          .get();
+          
+      if (query.docs.isNotEmpty) {
+        fridgeId = query.docs.first.id;
+        await prefs.setString('active_fridge_id', fridgeId);
+      } else {
+        fridgeId = await createDefaultFridgeForUser(user.uid, user.displayName ?? 'My Fridge');
+      }
+    }
+    activeFridgeId = fridgeId;
+    return fridgeId;
+  }
+
+  Future<String> createDefaultFridgeForUser(String userId, String userName) async {
+    final prefs = await SharedPreferences.getInstance();
+    final DocumentReference docRef = await _firestore.collection('fridges').add({
+      'name': 'My Fridge',
+      'type': 'home',
+      'ownerId': userId,
+      'authorizedUsers': [userId],
+      'membersMetadata': {
+        userId: {
+          'name': userName.isEmpty ? 'Owner' : userName,
+          'role': 'owner',
+        }
+      },
+      'status': 'online',
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    
+    await prefs.setString('active_fridge_id', docRef.id);
+    activeFridgeId = docRef.id;
+    return docRef.id;
+  }
+
   Future<String> addItem({
     required String name,
     required String quantity,
@@ -209,25 +264,28 @@ class FirebaseServices {
     if (user == null) throw AuthException('No authenticated user');
 
     try {
+      final fridgeId = await getActiveFridgeId();
       final docRef = await _firestore
-          .collection('users')
-          .doc(user.uid)
+          .collection('fridges')
+          .doc(fridgeId)
           .collection('items')
           .add({
             'name': name,
-            'quantity': quantity,
-            'unit': unit,
-            'category': category,
-            'expiryDate':
-                expiryDate, // Firestore handles DateTime directly or needs Timestamp?
-            // Firestore SDK handles DateTime by converting to Timestamp automatically usually,
-            // but for consistency with existing code (if any), explicit Timestamp might be safer if we read it as Timestamp.
-            // However, .add() supports DateTime.
-            'imageUrl': imageUrl,
-            'notes': notes,
-            'status': 'Fresh', // Default status
+            'source': 'manual',
+            'shelfId': 'A',
+            'shelfName': 'Top Shelf',
             'createdAt': FieldValue.serverTimestamp(),
             'updatedAt': FieldValue.serverTimestamp(),
+            'userOverrides': {
+              'quantity': quantity,
+              'unit': unit,
+              'category': category,
+              'status': 'Fresh',
+              'expiryDate': expiryDate,
+              'imageUrl': imageUrl,
+              'notes': notes,
+              'createdBy': user.uid,
+            }
           });
       return docRef.id;
     } on FirebaseException catch (e) {
@@ -244,8 +302,8 @@ class FirebaseServices {
       throw Exception('No authenticated user');
     }
     return _firestore
-        .collection('users')
-        .doc(user.uid)
+        .collection('fridges')
+        .doc(activeFridgeId ?? 'default')
         .collection('items')
         .orderBy('createdAt', descending: true)
         .snapshots();
@@ -255,8 +313,6 @@ class FirebaseServices {
     return getItemsStream().map((snapshot) {
       return snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
-        // Calculate status dynamically (ignoring stored 'Fresh'/'Expiring Soon' to allow auto-updates)
-        // We pass the whole data map so _calculateStatus can respect 'Spoiled' if manually set
         String status = _calculateStatus(data);
         final modelData = {...data, 'status': status};
         return InventoryItem.fromMap(modelData, doc.id);
@@ -269,16 +325,14 @@ class FirebaseServices {
     if (user == null) throw Exception('No authenticated user');
 
     try {
-      // Calculate status if needed, or rely on item.status
-      // For now, we trust the item's status or let backend rules handle it.
-      // But we should probably remove 'id' and update 'updatedAt'
+      final fridgeId = await getActiveFridgeId();
       final Map<String, dynamic> data = item.toMap();
       data.remove('id');
       data['updatedAt'] = FieldValue.serverTimestamp();
 
       await _firestore
-          .collection('users')
-          .doc(user.uid)
+          .collection('fridges')
+          .doc(fridgeId)
           .collection('items')
           .doc(item.id)
           .update(data);
@@ -292,9 +346,10 @@ class FirebaseServices {
     if (user == null) throw Exception('No authenticated user');
 
     try {
+      final fridgeId = await getActiveFridgeId();
       await _firestore
-          .collection('users')
-          .doc(user.uid)
+          .collection('fridges')
+          .doc(fridgeId)
           .collection('items')
           .doc(itemId)
           .delete();
@@ -303,32 +358,14 @@ class FirebaseServices {
     }
   }
 
-  // Stream<Map<String, dynamic>?> getItemById(String itemId) {
-  //   final User? user = _auth.currentUser;
-  //   if (user == null) {
-  //     throw Exception('No authenticated user');
-  //   }
-
-  //   return _firestore
-  //       .collection('users')
-  //       .doc(user.uid)
-  //       .collection('items')
-  //       .doc(itemId)
-  //       .snapshots()
-  //       .map((snapshot) {
-  //         if (!snapshot.exists) return null;
-  //         final data = snapshot.data()!;
-  //         return {...data, 'id': snapshot.id, 'status': _calculateStatus(data)};
-  //       });
-  // }
-
   Future<InventoryItem> getItem(String itemId) async {
     final User? user = _auth.currentUser;
     if (user == null) throw Exception('No authenticated user');
 
+    final fridgeId = await getActiveFridgeId();
     final doc = await _firestore
-        .collection('users')
-        .doc(user.uid)
+        .collection('fridges')
+        .doc(fridgeId)
         .collection('items')
         .doc(itemId)
         .get();

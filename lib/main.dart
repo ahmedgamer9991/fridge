@@ -108,6 +108,9 @@ class _AuthGateState extends State<AuthGate> {
           role = profile['role'] as String? ?? 'home';
         }
 
+        // Initialize Active Fridge ID
+        await FirebaseServices().getActiveFridgeId();
+
         // Prefetch Items for all users
         try {
           items = await FirebaseServices().getItems().first;
