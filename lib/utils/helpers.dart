@@ -60,7 +60,7 @@ class AppHelpers {
       // Notification IDs need to be 32-bit int.
       hash = hash & 0xFFFFFFFF;
     }
-    // Handle int overflow for Dart (just ensure it fits)
-    return hash;
+    // Handle signed 32-bit int overflow for Flutter Local Notifications ID
+    return hash.toSigned(32);
   }
 }

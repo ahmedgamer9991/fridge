@@ -121,6 +121,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               final profile = await ref.read(firebaseServicesProvider)
                                   .getUserProfile();
                               if (profile != null) {
+                                // Fetch and cache the new user's active fridge ID first
+                                await ref.read(firebaseServicesProvider).getActiveFridgeId();
                                 // Just await the fetch, AuthGate handles the rest
                                 await ref.read(firebaseServicesProvider).getItems().first;
                               }

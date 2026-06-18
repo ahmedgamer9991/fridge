@@ -112,33 +112,45 @@ class NotificationService {
       body = '$itemName expires TODAY! Consume it now.';
     }
 
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledDate, tz.local),
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'expiry_channel',
-          'Expiry Alerts',
-          channelDescription: 'Notifications for items nearing expiry',
-          importance: Importance.high,
-          priority: Priority.high,
+    try {
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        id,
+        title,
+        body,
+        tz.TZDateTime.from(scheduledDate, tz.local),
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'expiry_channel',
+            'Expiry Alerts',
+            channelDescription: 'Notifications for items nearing expiry',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
         ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
-    debugPrint("Scheduled notification for $itemName at $scheduledDate");
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+      debugPrint("Scheduled notification for $itemName at $scheduledDate");
+    } catch (e) {
+      debugPrint("Failed to schedule notification for $itemName: $e");
+    }
   }
 
   Future<void> cancelNotification(int id) async {
     if (kIsWeb) return;
-    await flutterLocalNotificationsPlugin.cancel(id);
+    try {
+      await flutterLocalNotificationsPlugin.cancel(id);
+    } catch (e) {
+      debugPrint("Failed to cancel notification with id $id: $e");
+    }
   }
 
   Future<void> cancelAll() async {
     if (kIsWeb) return;
-    await flutterLocalNotificationsPlugin.cancelAll();
+    try {
+      await flutterLocalNotificationsPlugin.cancelAll();
+    } catch (e) {
+      debugPrint("Failed to cancel all notifications: $e");
+    }
   }
 }
