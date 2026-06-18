@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:Eyeventory/firebase_options.dart';
@@ -15,13 +14,13 @@ import 'package:Eyeventory/screens/auth/verify_email.dart';
 import 'package:Eyeventory/services/firebase_services.dart';
 import 'package:Eyeventory/screens/shared/splash_screen.dart';
 import 'package:Eyeventory/services/notification_service.dart';
-import 'package:Eyeventory/models/inventory_item.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await NotificationService().init(); // Initialize Notifications
-  runApp(const Fridge());
+  runApp(const ProviderScope(child: Fridge()));
 }
 
 class Fridge extends StatelessWidget {
@@ -50,119 +49,56 @@ class Fridge extends StatelessWidget {
   }
 }
 
-class AuthGate extends StatefulWidget {
+class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key});
 
   @override
-  State<AuthGate> createState() => _AuthGateState();
+  ConsumerState<AuthGate> createState() => _AuthGateState();
 }
 
-class _AuthGateState extends State<AuthGate> {
+class _AuthGateState extends ConsumerState<AuthGate> {
   bool _minTimePassed = false;
-  bool _isBootstrapComplete = false;
-  User? _user;
-  String? _userRole;
-  List<InventoryItem>? _initialItems;
 
   @override
   void initState() {
     super.initState();
-    _startBootstrap();
-  }
-
-  Future<void> _startBootstrap() async {
-    // 1. Start Minimum Timer
     Future.delayed(const Duration(milliseconds: 2500), () {
       if (mounted) {
         setState(() => _minTimePassed = true);
       }
     });
-
-    // 2. Fetch Auth State & Profile
-    // We listen to the stream once. If it emits, we process.
-    // However, StreamBuilder is usually better for *re*auth updates.
-    // But for the initial Splash, we want to wait for the *first* valid state.
-
-    // Let's use the Stream to get the user, then fetch the profile.
-    FirebaseServices().idTokenChanges.listen((user) async {
-      if (!mounted) return;
-
-      // If logging out, update immediately
-      if (user == null) {
-        setState(() {
-          _user = null;
-          _userRole = null;
-          _initialItems = null;
-          _isBootstrapComplete = true;
-        });
-        return;
-      }
-
-      // If logging in, fetch data FIRST
-      try {
-        final profile = await FirebaseServices().getUserProfile();
-        String role = 'home';
-        List<InventoryItem>? items;
-
-        if (profile != null) {
-          role = profile['role'] as String? ?? 'home';
-        }
-
-        // Initialize Active Fridge ID
-        await FirebaseServices().getActiveFridgeId();
-
-        // Prefetch Items for all users
-        try {
-          items = await FirebaseServices().getItems().first;
-        } catch (_) {}
-
-        if (mounted) {
-          setState(() {
-            _user = user;
-            _userRole = role;
-            _initialItems = items;
-            _isBootstrapComplete = true;
-          });
-        }
-      } catch (e) {
-        // Fallback
-        if (mounted) {
-          setState(() {
-            _user = user;
-            _userRole = 'home';
-            _isBootstrapComplete = true;
-          });
-        }
-      }
-    });
-
-    // Trigger something if stream doesn't emit?
-    // FirebaseAuth stream usually emits immediately.
-
-    // Note: The timer runs concurrently.
   }
 
   @override
   Widget build(BuildContext context) {
-    // Condition to keep showing Splash:
-    // Timer NOT passed OR Bootstrap NOT complete (data loading)
-    if (!_minTimePassed || !_isBootstrapComplete) {
-      return const SplashScreen();
-    }
+    final authState = ref.watch(authChangesProvider);
 
-    final user = _user;
+    return authState.when(
+      data: (user) {
+        if (user == null) {
+          return const WelcomeScreen();
+        }
 
-    // Not logged in → show home/onboarding
-    if (user == null) {
-      return const WelcomeScreen();
-    }
+        if (!user.emailVerified) {
+          return const VerifyEmailScreen();
+        }
 
-    // Logged in but email not verified → show verification screen
-    if (!user.emailVerified) {
-      return const VerifyEmailScreen();
-    }
+        final profileAsync = ref.watch(userProfileProvider);
+        final activeFridgeIdAsync = ref.watch(activeFridgeIdProvider);
+        final inventoryAsync = ref.watch(inventoryItemsProvider);
 
-    // Logged in and verified → show app with pre-fetched role
-    return Root(userRole: _userRole ?? 'home', initialItems: _initialItems);
+        final profileReady = profileAsync.hasValue;
+        final fridgeReady = activeFridgeIdAsync.hasValue;
+        final inventoryReady = inventoryAsync.hasValue || inventoryAsync.hasError;
+
+        if (!_minTimePassed || !profileReady || !fridgeReady || !inventoryReady) {
+          return const SplashScreen();
+        }
+
+        return const Root();
+      },
+      loading: () => const SplashScreen(),
+      error: (err, stack) => const WelcomeScreen(),
+    );
   }
 }

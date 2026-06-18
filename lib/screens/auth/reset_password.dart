@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Eyeventory/services/firebase_services.dart';
 import 'package:Eyeventory/utils/constants.dart';
 import 'package:Eyeventory/widgets/widgets.dart';
 import 'package:Eyeventory/utils/error_utils.dart';
 
-class ResetPasswordScreen extends StatefulWidget {
+class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key});
 
   @override
-  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final TextEditingController _emailController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _isEmailValid = true;
@@ -60,7 +61,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ? () async {
                           setState(() => _isLoading = true);
                           try {
-                            await FirebaseServices().resetPassword(
+                            await ref.read(firebaseServicesProvider).resetPassword(
                               _emailController.text.trim(),
                             );
                             if (!context.mounted) return;

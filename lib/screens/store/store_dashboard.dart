@@ -1,28 +1,27 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Eyeventory/services/firebase_services.dart';
 import 'package:Eyeventory/utils/constants.dart';
 import 'package:Eyeventory/utils/helpers.dart';
 import 'package:Eyeventory/widgets/widgets.dart';
 import 'package:Eyeventory/models/inventory_item.dart';
 
-class StoreDashboard extends StatefulWidget {
-  final List<InventoryItem>? initialItems;
-  const StoreDashboard({super.key, this.initialItems});
+class StoreDashboard extends ConsumerStatefulWidget {
+  const StoreDashboard({super.key});
 
   @override
-  State<StoreDashboard> createState() => _StoreDashboardState();
+  ConsumerState<StoreDashboard> createState() => _StoreDashboardState();
 }
 
-class _StoreDashboardState extends State<StoreDashboard> {
+class _StoreDashboardState extends ConsumerState<StoreDashboard> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   String _selectedCategory = 'All';
   String _selectedStatFilter = 'all';
   Timer? _debounce;
   bool _isSearching = false;
-  late Stream<List<InventoryItem>> _itemsStream;
 
   final Map<String, String> _statFilterMap = {
     'Total Items': 'all',
@@ -34,7 +33,6 @@ class _StoreDashboardState extends State<StoreDashboard> {
   @override
   void initState() {
     super.initState();
-    _itemsStream = FirebaseServices().getItems();
   }
 
   @override
@@ -70,6 +68,10 @@ class _StoreDashboardState extends State<StoreDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final inventoryAsync = ref.watch(inventoryItemsProvider);
+    final allItems = inventoryAsync.value ?? [];
+    final isLoading = inventoryAsync.isLoading && allItems.isEmpty;
+
     return Scaffold(
       appBar: AppHeader(
         title: _getAppBarTitle(),
@@ -111,29 +113,15 @@ class _StoreDashboardState extends State<StoreDashboard> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: StreamBuilder<List<InventoryItem>>(
-                  stream: _itemsStream,
-                  initialData: widget.initialItems,
-                  builder: (context, snapshot) {
-                    // If loading, show placeholder or spinner only here?
-                    // Or just show stats with 0?
-                    // Usually StatsGrid handles empty lists gracefully since we pass list.
-                    // But we must handle 'waiting'.
-
-                    if (snapshot.connectionState == ConnectionState.waiting &&
-                        !snapshot.hasData) {
-                      return const SizedBox(
+                child: isLoading
+                    ? const SizedBox(
                         height: 100,
                         child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-
-                    return StatsGrid(
-                      items: snapshot.data ?? [],
-                      // Interaction disabled for store dashboard
-                    );
-                  },
-                ),
+                      )
+                    : StatsGrid(
+                        items: allItems,
+                        // Interaction disabled for store dashboard
+                      ),
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -163,35 +151,29 @@ class _StoreDashboardState extends State<StoreDashboard> {
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
             // 4. Fridge Sections (Dependant on Data)
-            StreamBuilder<List<InventoryItem>>(
-              stream: _itemsStream,
-              initialData: widget.initialItems,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting &&
-                    !snapshot.hasData) {
-                  return const SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-
-                final allItems = snapshot.data ?? [];
+            if (isLoading)
+              const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else ...[
+              (() {
                 final filteredItems = _filterItems(allItems);
 
                 // If search yields no results
                 if (filteredItems.isEmpty &&
                     (_isSearching || _selectedCategory != 'All')) {
-                  return SliverToBoxAdapter(
+                  return const SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 40),
+                      padding: EdgeInsets.only(top: 40),
                       child: Column(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.search_off,
                             size: 48,
                             color: Colors.grey,
                           ),
-                          const SizedBox(height: 16),
-                          const Text("No Items Found"),
+                          SizedBox(height: 16),
+                          Text("No Items Found"),
                         ],
                       ),
                     ),
@@ -208,8 +190,8 @@ class _StoreDashboardState extends State<StoreDashboard> {
                     childCount: 4, // Fridge A, B, Freezer, Pantry
                   ),
                 );
-              },
-            ),
+              }()),
+            ],
 
             const SliverToBoxAdapter(child: SizedBox(height: 80)),
           ],

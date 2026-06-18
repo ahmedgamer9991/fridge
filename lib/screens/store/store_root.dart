@@ -5,11 +5,8 @@ import 'package:Eyeventory/screens/store/store_dashboard.dart';
 import 'package:Eyeventory/screens/store/store_insights.dart';
 import 'package:Eyeventory/utils/constants.dart';
 
-import 'package:Eyeventory/models/inventory_item.dart';
-
 class StoreRoot extends StatefulWidget {
-  final List<InventoryItem>? initialItems;
-  const StoreRoot({super.key, this.initialItems});
+  const StoreRoot({super.key});
 
   @override
   State<StoreRoot> createState() => _StoreRootState();
@@ -24,10 +21,10 @@ class _StoreRootState extends State<StoreRoot> {
   void initState() {
     super.initState();
     _screens = [
-      StoreDashboard(initialItems: widget.initialItems),
-      StoreInsights(),
-      NotificationsScreen(),
-      ProfileScreen(),
+      const StoreDashboard(),
+      const StoreInsights(),
+      const NotificationsScreen(),
+      const ProfileScreen(),
     ];
   }
 

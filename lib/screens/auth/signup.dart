@@ -1,18 +1,19 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Eyeventory/widgets/widgets.dart';
 import 'package:Eyeventory/utils/constants.dart';
 import 'package:Eyeventory/utils/error_utils.dart';
 import 'package:Eyeventory/services/firebase_services.dart';
 
-class SignupScreen extends StatefulWidget {
+class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
 
   @override
-  State<SignupScreen> createState() => _SignupScreenState();
+  ConsumerState<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
+class _SignupScreenState extends ConsumerState<SignupScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -174,13 +175,13 @@ class _SignupScreenState extends State<SignupScreen> {
                             _isLoading = true;
                           });
                           try {
-                            await FirebaseServices().createAccount(
+                            await ref.read(firebaseServicesProvider).createAccount(
                               _emailController.text.trim(),
                               _passwordController.text.trim(),
                               _nameController.text.trim(),
                               _selectedRole!,
                             );
-                            await FirebaseServices().sendEmailVerification();
+                            await ref.read(firebaseServicesProvider).sendEmailVerification();
 
                             if (!context.mounted) return;
                             Navigator.pop(context);

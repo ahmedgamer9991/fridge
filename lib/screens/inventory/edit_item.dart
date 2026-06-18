@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Eyeventory/utils/constants.dart';
 import 'package:Eyeventory/widgets/widgets.dart';
 import 'package:Eyeventory/services/firebase_services.dart';
@@ -8,14 +9,14 @@ import 'package:Eyeventory/services/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:Eyeventory/utils/helpers.dart';
 
-class EditItemScreen extends StatefulWidget {
+class EditItemScreen extends ConsumerStatefulWidget {
   const EditItemScreen({super.key});
 
   @override
-  State<EditItemScreen> createState() => _EditItemScreenState();
+  ConsumerState<EditItemScreen> createState() => _EditItemScreenState();
 }
 
-class _EditItemScreenState extends State<EditItemScreen> {
+class _EditItemScreenState extends ConsumerState<EditItemScreen> {
   InventoryItem? _itemData;
 
   bool _isLoading = true;
@@ -53,15 +54,26 @@ class _EditItemScreenState extends State<EditItemScreen> {
       // Get item ID from navigation arguments
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is String) {
-        final item = await FirebaseServices().getItem(args);
-
-        if (mounted) {
-          setState(() {
-            _itemData = item;
-            _isLoading = false;
-            // Initialize form controllers with loaded data
-            _initFormControllers(_itemData!);
-          });
+        final item = ref.read(inventoryItemByIdProvider(args));
+        if (item != null) {
+          if (mounted) {
+            setState(() {
+              _itemData = item;
+              _isLoading = false;
+              // Initialize form controllers with loaded data
+              _initFormControllers(_itemData!);
+            });
+          }
+        } else {
+          final itemFromDb = await ref.read(firebaseServicesProvider).getItem(args);
+          if (mounted) {
+            setState(() {
+              _itemData = itemFromDb;
+              _isLoading = false;
+              // Initialize form controllers with loaded data
+              _initFormControllers(_itemData!);
+            });
+          }
         }
       }
     } catch (e) {
@@ -371,7 +383,7 @@ class _EditItemScreenState extends State<EditItemScreen> {
     );
 
     try {
-      await FirebaseServices().updateItem(updatedItem);
+      await ref.read(firebaseServicesProvider).updateItem(updatedItem);
 
       // Reschedule Notifications
       if (_selectedExpiryDate != null) {

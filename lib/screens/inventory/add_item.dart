@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Eyeventory/widgets/widgets.dart';
 import 'package:Eyeventory/services/firebase_services.dart';
 import 'package:Eyeventory/utils/constants.dart';
@@ -6,14 +7,14 @@ import 'package:Eyeventory/services/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:Eyeventory/utils/helpers.dart';
 
-class AddItemScreen extends StatefulWidget {
+class AddItemScreen extends ConsumerStatefulWidget {
   const AddItemScreen({super.key});
 
   @override
-  State<AddItemScreen> createState() => _AddItemScreenState();
+  ConsumerState<AddItemScreen> createState() => _AddItemScreenState();
 }
 
-class _AddItemScreenState extends State<AddItemScreen> {
+class _AddItemScreenState extends ConsumerState<AddItemScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController();
   final FocusNode _focusNode1 = FocusNode();
@@ -320,7 +321,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
                         // Use a local variable to capture context if needed, but here we can just check mounted
                         try {
-                          final docId = await FirebaseServices().addItem(
+                          final docId = await ref.read(firebaseServicesProvider).addItem(
                             name: name,
                             category: _selectedCategory!,
                             quantity: _quantityController.text.trim().isEmpty

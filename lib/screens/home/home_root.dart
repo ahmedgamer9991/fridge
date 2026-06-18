@@ -5,11 +5,8 @@ import 'package:Eyeventory/screens/shared/profile.dart';
 import 'package:Eyeventory/screens/home/recipes.dart';
 import 'package:Eyeventory/utils/constants.dart';
 
-import 'package:Eyeventory/models/inventory_item.dart';
-
 class HomeRoot extends StatefulWidget {
-  final List<InventoryItem>? initialItems;
-  const HomeRoot({super.key, this.initialItems});
+  const HomeRoot({super.key});
 
   @override
   State<HomeRoot> createState() => _HomeRootState();
@@ -24,10 +21,10 @@ class _HomeRootState extends State<HomeRoot> {
   void initState() {
     super.initState();
     _screens = [
-      InventoryScreen(initialItems: widget.initialItems),
-      RecipesScreen(),
-      GroceryScreen(),
-      ProfileScreen(),
+      const InventoryScreen(),
+      const RecipesScreen(),
+      const GroceryScreen(),
+      const ProfileScreen(),
     ];
   }
 

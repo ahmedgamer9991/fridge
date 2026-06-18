@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Eyeventory/services/firebase_services.dart';
 import 'package:Eyeventory/utils/constants.dart';
 import 'package:Eyeventory/widgets/widgets.dart';
 import 'package:Eyeventory/utils/error_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   // User data
   final String _fridgeName = 'My Home Fridge';
-
-  Map<String, dynamic>? _userProfile;
 
   // Toggle states
   bool _expiryAlerts = true;
@@ -43,12 +42,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUserProfile() async {
     try {
-      final profile = await FirebaseServices().getUserProfile();
-      if (mounted) {
-        setState(() {
-          _userProfile = profile;
-        });
-      }
       await _loadLocalSettings();
     } catch (error) {
       if (mounted) {
@@ -88,6 +81,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final profileAsync = ref.watch(userProfileProvider);
+    final userProfile = profileAsync.value;
+
     return Scaffold(
       appBar: const AppHeader(
         title: 'Profile',
@@ -100,7 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // User Profile Card
-              UserProfileCard(userProfile: _userProfile),
+              UserProfileCard(userProfile: userProfile),
 
               const SizedBox(height: 24),
 
@@ -210,7 +206,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: ElevatedButton(
                   onPressed: () async {
                     try {
-                      await FirebaseServices().signOut();
+                      await ref.read(firebaseServicesProvider).signOut();
                     } catch (error) {
                       if (context.mounted) {
                         ErrorUtils.showErrorSnackBar(

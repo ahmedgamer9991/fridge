@@ -4,6 +4,7 @@ import 'package:Eyeventory/core/errors/exceptions.dart';
 import 'package:Eyeventory/models/inventory_item.dart';
 import 'package:Eyeventory/utils/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FirebaseServices {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -416,3 +417,77 @@ class FirebaseServices {
     return 'Fresh';
   }
 }
+
+final firebaseServicesProvider = Provider<FirebaseServices>((ref) {
+  return FirebaseServices();
+});
+
+final authChangesProvider = StreamProvider<User?>((ref) {
+  return ref.watch(firebaseServicesProvider).authStateChanges;
+});
+
+final userProfileProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
+  final authState = ref.watch(authChangesProvider);
+  final user = authState.value;
+  if (user == null) return null;
+  return ref.watch(firebaseServicesProvider).getUserProfile();
+});
+
+class ActiveFridgeNotifier extends StateNotifier<AsyncValue<String?>> {
+  final Ref ref;
+  ActiveFridgeNotifier(this.ref) : super(const AsyncValue.loading()) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    state = const AsyncValue.loading();
+    try {
+      final fridgeId = await ref.read(firebaseServicesProvider).getActiveFridgeId();
+      state = AsyncValue.data(fridgeId);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+    }
+  }
+
+  Future<void> setActiveFridge(String fridgeId) async {
+    state = const AsyncValue.loading();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('active_fridge_id', fridgeId);
+      FirebaseServices.activeFridgeId = fridgeId;
+      state = AsyncValue.data(fridgeId);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+    }
+  }
+}
+
+final activeFridgeIdProvider = StateNotifierProvider<ActiveFridgeNotifier, AsyncValue<String?>>((ref) {
+  return ActiveFridgeNotifier(ref);
+});
+
+final inventoryItemsProvider = StreamProvider<List<InventoryItem>>((ref) {
+  final activeFridgeIdAsync = ref.watch(activeFridgeIdProvider);
+  return activeFridgeIdAsync.when(
+    data: (fridgeId) {
+      if (fridgeId == null) return const Stream.empty();
+      FirebaseServices.activeFridgeId = fridgeId;
+      return ref.watch(firebaseServicesProvider).getItems();
+    },
+    loading: () => const Stream.empty(),
+    error: (error, stack) => const Stream.empty(),
+  );
+});
+
+final inventoryItemByIdProvider = Provider.family<InventoryItem?, String>((ref, itemId) {
+  final itemsAsync = ref.watch(inventoryItemsProvider);
+  return itemsAsync.whenOrNull(
+    data: (items) {
+      try {
+        return items.firstWhere((item) => item.id == itemId);
+      } catch (_) {
+        return null;
+      }
+    },
+  );
+});

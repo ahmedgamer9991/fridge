@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Eyeventory/services/firebase_services.dart';
 import 'package:Eyeventory/utils/constants.dart';
 import 'package:Eyeventory/widgets/widgets.dart';
@@ -7,14 +8,14 @@ import 'package:Eyeventory/utils/error_utils.dart';
 import 'package:Eyeventory/models/inventory_item.dart';
 import 'package:Eyeventory/services/notification_service.dart';
 
-class ItemDetailsScreen extends StatefulWidget {
+class ItemDetailsScreen extends ConsumerStatefulWidget {
   const ItemDetailsScreen({super.key});
 
   @override
-  State<ItemDetailsScreen> createState() => _ItemDetailsScreenState();
+  ConsumerState<ItemDetailsScreen> createState() => _ItemDetailsScreenState();
 }
 
-class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
+class _ItemDetailsScreenState extends ConsumerState<ItemDetailsScreen> {
   late String _itemId;
   InventoryItem? _itemData;
   bool _isLoading = true;
@@ -25,42 +26,29 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadItemData();
-      }
-    });
   }
 
-  Future<void> _loadItemData() async {
-    try {
-      final args = ModalRoute.of(context)?.settings.arguments;
-      if (args is String) {
-        _itemId = args;
-        final item = await FirebaseServices().getItem(_itemId);
-
-        if (mounted) {
-          setState(() {
-            _itemData = item;
-            _isLoading = false;
-          });
-        }
-      } else {
-        throw Exception('Invalid navigation arguments');
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _hasError = true;
-          _errorMessage = ErrorUtils.parseError(e);
-        });
-      }
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is String) {
+      _itemId = args;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final inventoryAsync = ref.watch(inventoryItemsProvider);
+    final itemData = ref.watch(inventoryItemByIdProvider(_itemId));
+
+    _itemData = itemData;
+    _isLoading = inventoryAsync.isLoading && itemData == null;
+    _hasError = inventoryAsync.hasError && itemData == null;
+    if (_hasError) {
+      _errorMessage = inventoryAsync.error.toString();
+    }
+
     return Scaffold(
       appBar: AppHeader(
         title: _itemData?.name ?? 'Item Details',
@@ -113,7 +101,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                 setState(() {
                   _isLoading = true;
                   _hasError = false;
-                  _loadItemData();
+                  ref.invalidate(inventoryItemsProvider);
                 });
               },
               style: ElevatedButton.styleFrom(
@@ -333,10 +321,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                 context,
                 '/edit-item',
                 arguments: _itemData?.id,
-              ).then((_) {
-                // Reload item data when coming back from edit screen
-                _loadItemData();
-              });
+              );
             },
             textColor: Colors.white,
             title: "Edit Item",
@@ -429,7 +414,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     if (_itemData == null) return;
     try {
       final updatedItem = _itemData!.copyWith(status: status);
-      await FirebaseServices().updateItem(updatedItem);
+      await ref.read(firebaseServicesProvider).updateItem(updatedItem);
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -462,7 +447,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
             onPressed: () async {
               Navigator.pop(dialogContext); // Close dialog
               try {
-                await FirebaseServices().deleteItem(_itemId);
+                await ref.read(firebaseServicesProvider).deleteItem(_itemId);
 
                 // Cancel notifications
                 await NotificationService().cancelNotification(

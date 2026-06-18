@@ -1,21 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Eyeventory/services/firebase_services.dart';
 import 'package:Eyeventory/utils/constants.dart';
 import 'package:Eyeventory/widgets/widgets.dart';
 import 'package:Eyeventory/utils/helpers.dart';
 import 'package:Eyeventory/models/inventory_item.dart';
 
-class InventoryScreen extends StatefulWidget {
-  final List<InventoryItem>? initialItems;
-  const InventoryScreen({super.key, this.initialItems});
+class InventoryScreen extends ConsumerStatefulWidget {
+  const InventoryScreen({super.key});
 
   @override
-  State<InventoryScreen> createState() => _InventoryScreenState();
+  ConsumerState<InventoryScreen> createState() => _InventoryScreenState();
 }
 
-class _InventoryScreenState extends State<InventoryScreen> {
+class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   String _selectedCategory = 'All';
   final TextEditingController _searchController = TextEditingController();
   final _focusNode = FocusNode();
@@ -30,46 +30,31 @@ class _InventoryScreenState extends State<InventoryScreen> {
     'Spoiled/Expired': 'spoiled',
   };
 
-  Widget _buildInventoryList() {
-    return StreamBuilder<List<InventoryItem>>(
-      stream: FirebaseServices().getItems(),
-      initialData: widget.initialItems,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData) {
-          return const SliverToBoxAdapter(
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
+  Widget _buildInventoryList(List<InventoryItem> items, bool isLoading) {
+    if (isLoading) {
+      return const SliverToBoxAdapter(
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-        if (snapshot.hasError) {
-          return SliverToBoxAdapter(
-            child: Center(child: Text('Error: ${snapshot.error}')),
-          );
-        }
+    // Store all items for search
+    if (!_isSearching && items.isNotEmpty) {
+      _allItems.clear();
+      _allItems.addAll(items);
+    }
 
-        final items = snapshot.data ?? [];
+    // Apply search filter
+    final filteredItems = _filterItems(items);
 
-        // Store all items for search
-        if (!_isSearching && items.isNotEmpty) {
-          _allItems.clear();
-          _allItems.addAll(items);
-        }
+    if (filteredItems.isEmpty) {
+      return SliverToBoxAdapter(child: _buildEmptyState());
+    }
 
-        // Apply search filter
-        final filteredItems = _filterItems(items);
-
-        if (filteredItems.isEmpty) {
-          return SliverToBoxAdapter(child: _buildEmptyState());
-        }
-
-        return SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) => _buildItemCard(filteredItems[index]),
-            childCount: filteredItems.length,
-          ),
-        );
-      },
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) => _buildItemCard(filteredItems[index]),
+        childCount: filteredItems.length,
+      ),
     );
   }
 
@@ -149,6 +134,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final inventoryAsync = ref.watch(inventoryItemsProvider);
+    final items = inventoryAsync.value ?? [];
+    final isLoading = inventoryAsync.isLoading && items.isEmpty;
+
     return Scaffold(
       appBar: AppHeader(
         title: _getAppBarTitle(),
@@ -193,7 +182,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: _buildStatsGrid(),
+                child: _buildStatsGrid(items),
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
@@ -214,7 +203,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
             // Item List
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              sliver: _buildInventoryList(),
+              sliver: _buildInventoryList(items, isLoading),
             ),
             const SliverToBoxAdapter(
               child: SizedBox(height: 80),
@@ -252,21 +241,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-  Widget _buildStatsGrid() {
-    return StreamBuilder<List<InventoryItem>>(
-      stream: FirebaseServices().getItems(),
-      builder: (context, snapshot) {
-        final items = snapshot.data ?? [];
-        return StatsGrid(
-          items: items,
-          selectedFilterKey: _selectedStatFilter,
-          onFilterSelected: (key) {
-            setState(() {
-              _selectedStatFilter = key;
-              _selectedCategory = 'All';
-            });
-          },
-        );
+  Widget _buildStatsGrid(List<InventoryItem> items) {
+    return StatsGrid(
+      items: items,
+      selectedFilterKey: _selectedStatFilter,
+      onFilterSelected: (key) {
+        setState(() {
+          _selectedStatFilter = key;
+          _selectedCategory = 'All';
+        });
       },
     );
   }

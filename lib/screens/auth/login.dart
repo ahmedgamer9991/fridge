@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Eyeventory/utils/constants.dart';
 import 'package:Eyeventory/widgets/widgets.dart';
 import 'package:Eyeventory/services/firebase_services.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -109,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           });
                           try {
                             // 1. Sign In
-                            await FirebaseServices().signIn(
+                            await ref.read(firebaseServicesProvider).signIn(
                               _emailController.text.trim(),
                               _passwordController.text.trim(),
                             );
@@ -117,11 +118,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             // 2. Pre-fetch Data so we don't pop to an empty screen
                             // (AuthGate is also doing this, but we wait here to keep the spinner)
                             try {
-                              final profile = await FirebaseServices()
+                              final profile = await ref.read(firebaseServicesProvider)
                                   .getUserProfile();
                               if (profile != null) {
                                 // Just await the fetch, AuthGate handles the rest
-                                await FirebaseServices().getItems().first;
+                                await ref.read(firebaseServicesProvider).getItems().first;
                               }
                             } catch (_) {}
 

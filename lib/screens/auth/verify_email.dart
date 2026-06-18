@@ -1,18 +1,19 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Eyeventory/services/firebase_services.dart';
 import 'package:Eyeventory/utils/constants.dart';
 import 'package:Eyeventory/widgets/widgets.dart';
 import 'package:Eyeventory/utils/error_utils.dart';
 
-class VerifyEmailScreen extends StatefulWidget {
+class VerifyEmailScreen extends ConsumerStatefulWidget {
   const VerifyEmailScreen({super.key});
 
   @override
-  State<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
+  ConsumerState<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
 }
 
-class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
+class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
   bool _isLoading = true;
   bool _emailVerified = false;
   String? _errorMessage;
@@ -48,10 +49,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
   Future<void> _checkVerificationStatus() async {
     try {
-      final isVerified = await FirebaseServices().isEmailVerified();
+      final isVerified = await ref.read(firebaseServicesProvider).isEmailVerified();
       if (isVerified) {
         // ✅ FIX: Force the stream in main.dart to update
-        await FirebaseServices().refreshUserStream();
+        await ref.read(firebaseServicesProvider).refreshUserStream();
       }
       if (mounted) {
         setState(() {
@@ -70,7 +71,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
   Future<void> _resendVerificationEmail() async {
     try {
-      await FirebaseServices().sendEmailVerification();
+      await ref.read(firebaseServicesProvider).sendEmailVerification();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -95,7 +96,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         // Sign out when the user tries to go back
-        await FirebaseServices().signOut();
+        await ref.read(firebaseServicesProvider).signOut();
       },
       child: Scaffold(
         appBar: AppHeader(
@@ -107,7 +108,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   onPressed: () async {
                     // ✅ FIX: Sign out instead of Navigator.pop
                     // This triggers the stream in main.dart to show the HomeScreen
-                    await FirebaseServices().signOut();
+                    await ref.read(firebaseServicesProvider).signOut();
                   },
                 ),
         ),
