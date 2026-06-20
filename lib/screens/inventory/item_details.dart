@@ -154,8 +154,8 @@ class _ItemDetailsScreenState extends ConsumerState<ItemDetailsScreen> {
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: colorsBorder),
-        image: const DecorationImage(
-          image: AssetImage('assets/milk_test.png'),
+        image: DecorationImage(
+          image: AssetImage(_itemData != null ? AppHelpers.getItemImage(_itemData!.name) : 'assets/img_placeholder.png'),
           fit: BoxFit.cover,
         ),
       ),

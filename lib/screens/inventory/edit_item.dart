@@ -118,8 +118,8 @@ class _EditItemScreenState extends ConsumerState<EditItemScreen> {
                     color: Colors.grey[100],
                     border: Border.all(color: colorsBorder),
                     borderRadius: BorderRadius.circular(8),
-                    image: const DecorationImage(
-                      image: AssetImage('assets/milk_test.png'),
+                    image: DecorationImage(
+                      image: AssetImage(_itemData != null ? AppHelpers.getItemImage(_itemData!.name) : 'assets/img_placeholder.png'),
                       fit: BoxFit.cover,
                     ),
                   ),

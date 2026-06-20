@@ -1,69 +1,58 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Eyeventory/utils/constants.dart';
+import 'package:Eyeventory/utils/helpers.dart';
 import 'package:Eyeventory/widgets/widgets.dart';
+import 'package:Eyeventory/services/grocery_provider.dart';
+import 'package:Eyeventory/services/firebase_services.dart';
 
-class GroceryScreen extends StatefulWidget {
+class GroceryScreen extends ConsumerStatefulWidget {
   final bool isStoreUser;
   const GroceryScreen({super.key, this.isStoreUser = false});
 
   @override
-  State<GroceryScreen> createState() => _GroceryScreenState();
+  ConsumerState<GroceryScreen> createState() => _GroceryScreenState();
 }
 
-class _GroceryScreenState extends State<GroceryScreen> {
-  // Mock data for "Ingredients from favorite meals"
-  final List<Map<String, dynamic>> _favoriteMealItems = [
-    {
-      'name': 'Organic Milk',
-      'quantity': '1 gallon',
-      'image': 'assets/milk_test.png',
-      'isChecked': false,
-    },
-    {
-      'name': 'Fresh Strawberries',
-      'quantity': '1 lb',
-      'image': 'assets/apple_test.png',
-      'isChecked': false,
-    },
-    {
-      'name': 'Ground Beef (90/10)',
-      'quantity': '1.5 lbs',
-      'image': 'assets/milk_test.png',
-      'isChecked': true,
-    },
-  ];
+class _GroceryScreenState extends ConsumerState<GroceryScreen> {
+  // Local state to keep track of checked/unchecked low stock items
+  final Set<String> _checkedLowStockItems = {};
 
-  // Mock data for "Fridge items that are low-stock"
-  final List<Map<String, dynamic>> _lowStockItems = [
-    {
-      'name': 'Eggs (Large)',
-      'quantity': '1 dozen',
-      'image': 'assets/apple_test.png',
-      'isChecked': false,
-    },
-    {
-      'name': 'Spinach',
-      'quantity': '1 bag',
-      'image': 'assets/apple_test.png',
-      'isChecked': false,
-    },
-    {
-      'name': 'Parmesan Cheese',
-      'quantity': '1 block',
-      'image': 'assets/milk_test.png',
-      'isChecked': false,
-    },
-    {
-      'name': 'Unsalted Butter',
-      'quantity': '1 lb',
-      'image': 'assets/milk_test.png',
-      'isChecked': false,
-    },
-  ];
+  // Local state to track low-stock items dismissed by user for the session
+  final Set<String> _dismissedLowStockItems = {};
 
   @override
   Widget build(BuildContext context) {
+    // Watch the active shopping/grocery list items from Riverpod
+    final favoriteMealItems = ref.watch(groceryListProvider);
+
+    // Watch real-time fridge inventory to calculate low stock items
+    final inventoryAsync = ref.watch(inventoryItemsProvider);
+
+    final lowStockItems = inventoryAsync.maybeWhen(
+      data: (items) {
+        return items
+            .where((item) =>
+                AppHelpers.isLowStock(item) &&
+                !_dismissedLowStockItems.contains(item.name))
+            .map((item) {
+              // Convert InventoryItem to GroceryItem representation
+              final mockupImage = AppHelpers.getItemImage(item.name);
+
+              return GroceryItem(
+                name: item.name,
+                quantity: '${item.quantity} ${item.unit}',
+                image: mockupImage,
+                isChecked: _checkedLowStockItems.contains(item.name),
+              );
+            })
+            .toList();
+      },
+      orElse: () => <GroceryItem>[],
+    );
+
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppHeader(
         title: widget.isStoreUser ? 'Low Stock Items' : 'Grocery List',
         automaticallyImplyLeading: false,
@@ -92,7 +81,16 @@ class _GroceryScreenState extends State<GroceryScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                ..._favoriteMealItems.map(_buildGroceryItem),
+                if (favoriteMealItems.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Text(
+                      'No ingredients added. Find recipes and add missing ingredients!',
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                  )
+                else
+                  ...favoriteMealItems.map((item) => _buildGroceryItem(item, isLowStock: false)),
                 const SizedBox(height: 20),
               ],
 
@@ -106,7 +104,19 @@ class _GroceryScreenState extends State<GroceryScreen> {
                 ),
               ),
               const SizedBox(height: 14),
-              ..._lowStockItems.map(_buildGroceryItem),
+              
+              if (lowStockItems.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    inventoryAsync.isLoading
+                        ? 'Loading inventory...'
+                        : 'Great! No items are currently low stock.',
+                    style: const TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                )
+              else
+                ...lowStockItems.map((item) => _buildGroceryItem(item, isLowStock: true)),
             ],
           ),
         ),
@@ -114,11 +124,11 @@ class _GroceryScreenState extends State<GroceryScreen> {
     );
   }
 
-  Widget _buildGroceryItem(Map<String, dynamic> item) {
+  Widget _buildGroceryItem(GroceryItem item, {required bool isLowStock}) {
     return Card(
       color: Colors.white,
       elevation: .3,
-      shadowColor: Color.fromRGBO(0, 0, 0, 1),
+      shadowColor: const Color.fromRGBO(0, 0, 0, 1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: colorsBorder),
@@ -130,11 +140,19 @@ class _GroceryScreenState extends State<GroceryScreen> {
           vertical: 12,
         ),
         leading: Checkbox(
-          value: item['isChecked'] as bool,
+          value: item.isChecked,
           onChanged: (value) {
-            setState(() {
-              item['isChecked'] = value;
-            });
+            if (isLowStock) {
+              setState(() {
+                if (value == true) {
+                  _checkedLowStockItems.add(item.name);
+                } else {
+                  _checkedLowStockItems.remove(item.name);
+                }
+              });
+            } else {
+              ref.read(groceryListProvider.notifier).toggleItem(item.name, value ?? false);
+            }
           },
           activeColor: colorsPrimary,
           checkColor: Colors.white,
@@ -155,7 +173,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.asset(
-                  item['image'] as String,
+                  AppHelpers.getItemImage(item.name),
                   width: 56,
                   height: 56,
                   fit: BoxFit.cover,
@@ -175,7 +193,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item['name'] as String,
+                    item.name,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.normal,
@@ -186,7 +204,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    item['quantity'] as String,
+                    item.quantity,
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -199,9 +217,16 @@ class _GroceryScreenState extends State<GroceryScreen> {
         trailing: IconButton(
           icon: const Icon(Icons.close, color: Colors.grey),
           onPressed: () {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Removed ${item['name']}')));
+            if (isLowStock) {
+              setState(() {
+                _dismissedLowStockItems.add(item.name);
+              });
+            } else {
+              ref.read(groceryListProvider.notifier).removeItem(item.name);
+            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Removed ${item.name}')),
+            );
           },
         ),
       ),

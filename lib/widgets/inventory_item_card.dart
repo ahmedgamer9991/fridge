@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:Eyeventory/utils/constants.dart';
+import 'package:Eyeventory/utils/helpers.dart';
 
 class InventoryItemCard extends StatelessWidget {
   final String title;
@@ -61,7 +62,7 @@ class InventoryItemCard extends StatelessWidget {
                     : ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.asset(
-                          'assets/milk_test.png',
+                          AppHelpers.getItemImage(title),
                           width: 72,
                           height: 72,
                           fit: BoxFit.cover,

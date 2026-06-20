@@ -51,6 +51,23 @@ class AppHelpers {
     }
   }
 
+  static String getItemImage(String name) {
+    final lowerName = name.toLowerCase().trim();
+    if (lowerName.contains('apple')) return 'assets/apple.jpg';
+    if (lowerName.contains('banana')) return 'assets/banana.jpg';
+    if (lowerName.contains('bread')) return 'assets/bread.jpg';
+    if (lowerName.contains('carrot')) return 'assets/carrot.jpg';
+    if (lowerName.contains('cucumber')) return 'assets/cucumber.jpg';
+    if (lowerName.contains('egg')) return 'assets/egg.jpg';
+    if (lowerName.contains('mango')) return 'assets/mango.jpg';
+    if (lowerName.contains('orange')) return 'assets/orange.jpg';
+    if (lowerName.contains('pepper')) return 'assets/pepper.jpg';
+    if (lowerName.contains('potato')) return 'assets/potato.jpg';
+    if (lowerName.contains('strawberry') || lowerName.contains('berry')) return 'assets/strawberry.jpg';
+    if (lowerName.contains('tomato')) return 'assets/tomato.jpg';
+    return 'assets/img_placeholder.png'; // default fallback
+  }
+
   // Stable hash code for Strings (since 'str'.hashCode is not stable across restarts in Dart)
   static int getHashCode(String key) {
     var hash = 0;
