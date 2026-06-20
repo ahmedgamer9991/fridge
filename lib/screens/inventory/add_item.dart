@@ -267,7 +267,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
                         final selectedDate = await showDatePicker(
                           context: context,
                           initialDate: DateTime.now(),
-                          firstDate: DateTime.now(),
+                          firstDate: DateTime.now().subtract(const Duration(days: 365)),
                           lastDate: DateTime.now().add(
                             const Duration(days: 3650),
                           ),

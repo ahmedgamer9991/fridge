@@ -303,7 +303,7 @@ class _EditItemScreenState extends ConsumerState<EditItemScreen> {
                         final selectedDate = await showDatePicker(
                           context: context,
                           initialDate: _selectedExpiryDate ?? DateTime.now(),
-                          firstDate: DateTime.now(),
+                          firstDate: DateTime.now().subtract(const Duration(days: 365)),
                           lastDate: DateTime.now().add(
                             const Duration(days: 3650),
                           ),
