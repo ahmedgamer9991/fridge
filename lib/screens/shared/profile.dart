@@ -15,8 +15,6 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   // User data
-  final String _fridgeName = 'My Home Fridge';
-
   // Toggle states
   bool _expiryAlerts = true;
   bool _spoilageAlerts = false;
@@ -67,7 +65,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.initState();
     _loadUserProfile();
     _restockingController.text = '$_restockingThreshold';
-    _fridgeNameController.text = _fridgeName;
+    _fridgeNameController.text = ref.read(fridgeNameProvider);
   }
 
   @override
@@ -194,6 +192,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         'Customize the name displayed for your fridge.',
                     controller: _fridgeNameController,
                     focusNode: _focusNode2,
+                    onChanged: (value) {
+                      if (value.trim().isNotEmpty) {
+                        ref.read(fridgeNameProvider.notifier).updateName(value.trim());
+                      }
+                    },
                   ),
                 ],
               ),

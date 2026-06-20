@@ -73,7 +73,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 child: ElevatedButton(
                   onPressed: selectedUserType != null
                       ? () {
-                          Navigator.pushNamed(context, '/login');
+                          Navigator.pushNamed(
+                            context,
+                            '/login',
+                            arguments: selectedUserType,
+                          );
                         }
                       : null,
                   style: ElevatedButton.styleFrom(

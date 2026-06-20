@@ -265,6 +265,53 @@ class FirebaseServices {
     return docRef.id;
   }
 
+  Future<void> updateFridgeName(String newName) async {
+    final User? user = _auth.currentUser;
+    if (user == null) throw Exception('No authenticated user session found');
+
+    try {
+      final fridgeId = await getActiveFridgeId();
+      
+      // Update in Firestore
+      await _firestore.collection('fridges').doc(fridgeId).update({
+        'name': newName,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      
+      // Update in local SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('fridge_name_${user.uid}', newName);
+    } catch (e) {
+      throw Exception('Failed to update fridge name: $e');
+    }
+  }
+
+  Future<String> getFridgeName() async {
+    final User? user = _auth.currentUser;
+    if (user == null) return 'My Fridge';
+
+    try {
+      // Try local SharedPreferences first
+      final prefs = await SharedPreferences.getInstance();
+      final localName = prefs.getString('fridge_name_${user.uid}');
+      if (localName != null) return localName;
+
+      // Otherwise, fetch from Firestore
+      final fridgeId = await getActiveFridgeId();
+      final doc = await _firestore.collection('fridges').doc(fridgeId).get();
+      if (doc.exists) {
+        final data = doc.data();
+        final name = data?['name'] as String?;
+        if (name != null) {
+          // Cache it locally
+          await prefs.setString('fridge_name_${user.uid}', name);
+          return name;
+        }
+      }
+    } catch (_) {}
+    return 'My Fridge';
+  }
+
   Future<String> addItem({
     required String name,
     required String quantity,
@@ -525,4 +572,28 @@ final inventoryItemByIdProvider = Provider.family<InventoryItem?, String>((ref, 
       }
     },
   );
+});
+
+class FridgeNameNotifier extends StateNotifier<String> {
+  final Ref ref;
+  FridgeNameNotifier(this.ref) : super('My Home Fridge') {
+    _init();
+  }
+
+  Future<void> _init() async {
+    try {
+      final name = await ref.read(firebaseServicesProvider).getFridgeName();
+      state = name;
+    } catch (_) {}
+  }
+
+  Future<void> updateName(String newName) async {
+    await ref.read(firebaseServicesProvider).updateFridgeName(newName);
+    state = newName;
+  }
+}
+
+final fridgeNameProvider = StateNotifierProvider<FridgeNameNotifier, String>((ref) {
+  ref.watch(authChangesProvider);
+  return FridgeNameNotifier(ref);
 });

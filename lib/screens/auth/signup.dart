@@ -41,6 +41,17 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_selectedRole == null) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is String) {
+        _selectedRole = args;
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppHeader(title: 'Sign Up'),

@@ -40,11 +40,9 @@ ROOT
           │           ├── 🔹 createdAt: Timestamp
           │           ├── 🔹 updatedAt: Timestamp
           │           │
-          │           │  // 📍 Solution 2: Denormalize shelf details inside the item to avoid subcollection queries
           │           ├── 🔹 shelfId: "A"
           │           ├── 🔹 shelfName: "Top Shelf"
           │           │
-          │           │  // 📷 Solution 3: Split camera data and user modifications into separate namespaces
           │           ├── 🔹 detected: {
           │           │      "freshness": "fresh",
           │           │      "det_conf": 0.7502,
@@ -72,7 +70,6 @@ ROOT
                       ├── 🔹 alert: "spoilage_detected"
                       ├── 🔹 timestamp: Timestamp
                       │
-                      │  // 📍 Solution 2: Denormalize shelf details in alerts too
                       ├── 🔹 shelfId: "A"
                       └── 🔹 shelfName: "Top Shelf"
 ```

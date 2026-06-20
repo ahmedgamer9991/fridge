@@ -113,7 +113,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     });
   }
 
-  String _getAppBarTitle(List<InventoryItem> items) {
+  String _getAppBarTitle(List<InventoryItem> items, String fridgeName) {
     if (_isSearching) {
       return '${_filterItems(items).length} results';
     }
@@ -125,7 +125,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
       return 'Showing: $filterName';
     }
 
-    return 'My Home Fridge';
+    return fridgeName;
   }
 
   @override
@@ -133,10 +133,11 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     final inventoryAsync = ref.watch(inventoryItemsProvider);
     final items = inventoryAsync.value ?? [];
     final isLoading = inventoryAsync.isLoading && items.isEmpty;
+    final fridgeName = ref.watch(fridgeNameProvider);
 
     return Scaffold(
       appBar: AppHeader(
-        title: _getAppBarTitle(items),
+        title: _getAppBarTitle(items, fridgeName),
         automaticallyImplyLeading: false,
         actions: [
           if (_selectedStatFilter != 'all' || _selectedCategory != 'All')

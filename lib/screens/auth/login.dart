@@ -33,6 +33,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedUserType = ModalRoute.of(context)?.settings.arguments as String?;
     return Scaffold(
       resizeToAvoidBottomInset: true,
 
@@ -115,17 +116,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               _passwordController.text.trim(),
                             );
 
-                            // 2. Sign-in succeeded. AuthGate handles data loading
-                            // behind the SplashScreen, so we just pop back.
+                            // 2. Fetch user profile to verify role
+                            final profile = await ref.read(firebaseServicesProvider).getUserProfile();
+                            final userRole = profile?['role'] as String?;
+                            
+                            if (selectedUserType != null && userRole != null && userRole != selectedUserType) {
+                              // Sign out immediately to prevent staying logged in under incorrect mode
+                              await ref.read(firebaseServicesProvider).signOut();
+                              throw Exception(
+                                userRole == 'store'
+                                    ? 'Access Denied: This account is registered as a Store Manager.'
+                                    : 'Access Denied: This account is registered as a Home User.'
+                              );
+                            }
 
+                            // 3. Sign-in succeeded. AuthGate handles data loading
+                            // behind the SplashScreen, so we just pop back.
                             if (!context.mounted) return;
                             Navigator.pop(context);
                           } catch (e) {
-                            setState(() {
-                              _isLoading = false;
-                            });
+                            if (mounted) {
+                              setState(() {
+                                _isLoading = false;
+                              });
+                            }
+                            if (!context.mounted) return;
+                            final errorMessage = e.toString().replaceAll('Exception: ', '');
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error: ${e.toString()}')),
+                              SnackBar(
+                                content: Text(errorMessage),
+                                backgroundColor: Colors.red,
+                              ),
                             );
                           }
                         }
@@ -151,7 +172,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     // const SizedBox(height: 8),
                     TextButton(
                       onPressed: () {
-                        Navigator.pushReplacementNamed(context, '/signup');
+                        Navigator.pushReplacementNamed(
+                          context,
+                          '/signup',
+                          arguments: selectedUserType,
+                        );
                       },
                       child: Text(
                         'Create new account',
