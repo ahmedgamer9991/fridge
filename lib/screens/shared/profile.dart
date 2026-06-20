@@ -82,6 +82,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final profileAsync = ref.watch(userProfileProvider);
     final userProfile = profileAsync.value;
 
+    ref.listen<String>(fridgeNameProvider, (previous, next) {
+      if (_fridgeNameController.text != next) {
+        _fridgeNameController.text = next;
+      }
+    });
+
     return Scaffold(
       appBar: const AppHeader(
         title: 'Profile',
