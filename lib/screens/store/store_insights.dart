@@ -5,8 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Eyeventory/services/firebase_services.dart';
 import 'package:Eyeventory/utils/constants.dart';
 import 'package:Eyeventory/widgets/widgets.dart';
-import 'package:Eyeventory/widgets/stat_card.dart';
-import 'package:Eyeventory/utils/helpers.dart';
 import 'package:Eyeventory/models/inventory_item.dart';
 
 class StoreInsights extends ConsumerStatefulWidget {
@@ -160,10 +158,10 @@ class _StoreInsightsState extends ConsumerState<StoreInsights> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -187,7 +185,7 @@ class _StoreInsightsState extends ConsumerState<StoreInsights> {
                   horizontalInterval: maxY / 4,
                   getDrawingHorizontalLine: (value) {
                     return FlLine(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha: 0.2),
                       strokeWidth: 1,
                     );
                   },
@@ -269,7 +267,7 @@ class _StoreInsightsState extends ConsumerState<StoreInsights> {
                     dotData: const FlDotData(show: true),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: Colors.orange.withOpacity(0.1),
+                      color: Colors.orange.withValues(alpha: 0.1),
                     ),
                   ),
                 ],
@@ -429,10 +427,10 @@ class _StoreInsightsState extends ConsumerState<StoreInsights> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

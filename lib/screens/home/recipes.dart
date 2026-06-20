@@ -489,7 +489,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                   top: 12,
                   right: 12,
                   child: CircleAvatar(
-                    backgroundColor: Colors.white.withOpacity(0.9),
+                    backgroundColor: Colors.white.withValues(alpha: 0.9),
                     radius: 20,
                     child: IconButton(
                       padding: EdgeInsets.zero,
@@ -529,7 +529,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
+                            color: Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -554,8 +554,8 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: recipe.missedIngredientCount == 0
-                                ? Colors.green.withOpacity(0.1)
-                                : Colors.orange.withOpacity(0.1),
+                                ? Colors.green.withValues(alpha: 0.1)
+                                : Colors.orange.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(

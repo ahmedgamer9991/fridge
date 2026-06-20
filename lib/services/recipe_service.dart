@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:Eyeventory/config/api_config.dart';
@@ -82,7 +83,7 @@ class RecipeService {
         throw Exception('Failed to fetch recipes by ingredients: ${response.statusCode}');
       }
     } catch (e) {
-      print('Spoonacular searchByIngredients error: $e');
+      debugPrint('Spoonacular searchByIngredients error: $e');
       return [];
     }
   }
@@ -126,7 +127,7 @@ class RecipeService {
         throw Exception('Failed to search recipes globally: ${response.statusCode}');
       }
     } catch (e) {
-      print('Spoonacular searchRecipes error: $e');
+      debugPrint('Spoonacular searchRecipes error: $e');
       return [];
     }
   }
@@ -178,7 +179,7 @@ class RecipeService {
         throw Exception('Failed to fetch recipe info: ${response.statusCode}');
       }
     } catch (e) {
-      print('Spoonacular getRecipeInformation error: $e');
+      debugPrint('Spoonacular getRecipeInformation error: $e');
       return null;
     }
   }
@@ -225,7 +226,7 @@ final fridgeRecipesProvider = FutureProvider<List<SpoonacularRecipe>>((ref) asyn
     },
     loading: () => [],
     error: (err, stack) {
-      print('fridgeRecipesProvider error: $err');
+      debugPrint('fridgeRecipesProvider error: $err');
       return [];
     },
   );

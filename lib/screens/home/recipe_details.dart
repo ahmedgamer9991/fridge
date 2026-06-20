@@ -331,10 +331,10 @@ class RecipeDetailsScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: ingredient.isInFridge ? Colors.green.withOpacity(0.06) : Colors.grey[50],
+        color: ingredient.isInFridge ? Colors.green.withValues(alpha: 0.06) : Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: ingredient.isInFridge ? Colors.green.withOpacity(0.2) : Colors.grey[200]!,
+          color: ingredient.isInFridge ? Colors.green.withValues(alpha: 0.2) : Colors.grey[200]!,
         ),
       ),
       child: Row(
@@ -404,7 +404,7 @@ class RecipeDetailsScreen extends ConsumerWidget {
             height: 28,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: colorsPrimary.withOpacity(0.12),
+              color: colorsPrimary.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: Text(

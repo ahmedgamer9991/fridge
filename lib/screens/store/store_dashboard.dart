@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Eyeventory/services/firebase_services.dart';
 import 'package:Eyeventory/utils/constants.dart';
 import 'package:Eyeventory/widgets/widgets.dart';
-import 'package:Eyeventory/utils/helpers.dart';
 import 'package:Eyeventory/models/inventory_item.dart';
 import 'package:Eyeventory/screens/store/store_fridge_inventory.dart';
 
@@ -18,16 +17,8 @@ class StoreDashboard extends ConsumerStatefulWidget {
 class _StoreDashboardState extends ConsumerState<StoreDashboard> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  String _selectedStatFilter = 'all';
   Timer? _debounce;
   bool _isSearching = false;
-
-  final Map<String, String> _statFilterMap = {
-    'Total Items': 'all',
-    'Expiring Soon': 'expiring',
-    'Low Stock': 'low_stock',
-    'Spoiled/Expired': 'spoiled',
-  };
 
   @override
   void dispose() {
@@ -183,14 +174,14 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            searchQuery.isNotEmpty || _selectedStatFilter != 'all'
+                            searchQuery.isNotEmpty
                                 ? "No matching coolers found"
                                 : "No Fridges or Coolers Found",
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            searchQuery.isNotEmpty || _selectedStatFilter != 'all'
+                            searchQuery.isNotEmpty
                                 ? "Try clearing search or filters"
                                 : "Add a new fridge/cooler using the + button",
                             style: const TextStyle(color: Colors.grey),
@@ -261,7 +252,7 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -300,7 +291,7 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
                       ),
                       gradient: LinearGradient(
                         colors: [
-                          Colors.black.withOpacity(0.6),
+                          Colors.black.withValues(alpha: 0.6),
                           Colors.transparent,
                         ],
                         begin: Alignment.bottomCenter,
