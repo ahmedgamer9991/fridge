@@ -68,9 +68,9 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final inventoryAsync = ref.watch(inventoryItemsProvider);
-    final allItems = inventoryAsync.value ?? [];
-    final isLoading = inventoryAsync.isLoading && allItems.isEmpty;
+    final fridgesAsync = ref.watch(userFridgesProvider);
+    final activeFridgeIdAsync = ref.watch(activeFridgeIdProvider);
+    final activeFridgeId = activeFridgeIdAsync.value;
     final fridgeName = ref.watch(fridgeNameProvider);
 
     return Scaffold(
@@ -114,15 +114,30 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: isLoading
-                    ? const SizedBox(
-                        height: 100,
-                        child: Center(child: CircularProgressIndicator()),
-                      )
-                    : StatsGrid(
-                        items: allItems,
-                        // Interaction disabled for store dashboard
-                      ),
+                child: fridgesAsync.when(
+                  data: (fridges) {
+                    if (activeFridgeId != null) {
+                      final itemsAsync = ref.watch(fridgeItemsProvider(activeFridgeId));
+                      final items = itemsAsync.value ?? [];
+                      return StatsGrid(
+                        items: items,
+                        selectedFilterKey: _selectedStatFilter,
+                        onFilterSelected: (key) {
+                          setState(() {
+                            _selectedStatFilter = key;
+                            _selectedCategory = 'All';
+                          });
+                        },
+                      );
+                    }
+                    return const StatsGrid(items: []);
+                  },
+                  loading: () => const SizedBox(
+                    height: 100,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (err, stack) => const StatsGrid(items: []),
+                ),
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -151,44 +166,84 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
             SliverToBoxAdapter(child: _buildCategories()),
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-            // 4. Fridge Sections (Dependant on Data)
-            if (isLoading)
+            // 4. Fridge list (Dependant on Data)
+            if (fridgesAsync.isLoading)
               const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator()),
               )
             else ...[
               (() {
-                final filteredItems = _filterItems(allItems);
-
-                // If search yields no results
-                if (filteredItems.isEmpty &&
-                    (_isSearching || _selectedCategory != 'All')) {
+                final fridges = fridgesAsync.value ?? [];
+                
+                if (fridges.isEmpty) {
                   return const SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.only(top: 40),
                       child: Column(
                         children: [
                           Icon(
-                            Icons.search_off,
+                            Icons.kitchen_outlined,
                             size: 48,
                             color: Colors.grey,
                           ),
                           SizedBox(height: 16),
-                          Text("No Items Found"),
+                          Text("No Fridges or Coolers Found"),
+                          SizedBox(height: 8),
+                          Text("Add a new fridge/cooler using the + button", style: TextStyle(color: Colors.grey)),
                         ],
                       ),
                     ),
                   );
                 }
 
+                final searchQuery = _searchController.text.toLowerCase().trim();
+
                 return SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      final fridgeData = _getFridgeData(index, filteredItems);
-                      if (fridgeData == null) return const SizedBox.shrink();
-                      return _buildFridgeCard(fridgeData);
+                      final fridge = fridges[index];
+                      final fridgeId = fridge['id'] as String;
+                      final fridgeName = fridge['name'] as String? ?? 'Unnamed Fridge';
+                      final isActive = activeFridgeId == fridgeId;
+
+                      final itemsAsync = ref.watch(fridgeItemsProvider(fridgeId));
+                      return itemsAsync.when(
+                        data: (items) {
+                          final filteredItems = _filterItems(items);
+                          
+                          final matchesCategoryFilter = _selectedCategory == 'All' || items.any((i) => i.category == _selectedCategory);
+                          final matchesQuery = searchQuery.isEmpty || 
+                                               fridgeName.toLowerCase().contains(searchQuery) || 
+                                               items.any((i) => i.name.toLowerCase().contains(searchQuery));
+
+                          if (!matchesCategoryFilter || !matchesQuery) {
+                            return const SizedBox.shrink();
+                          }
+
+                          return _buildFridgeCard(
+                            id: fridgeId,
+                            name: fridgeName,
+                            isActive: isActive,
+                            items: filteredItems,
+                          );
+                        },
+                        loading: () => const Card(
+                          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: SizedBox(
+                            height: 100,
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                        ),
+                        error: (err, stack) => Card(
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: ListTile(
+                            title: Text('Error loading $fridgeName'),
+                            subtitle: Text(err.toString()),
+                          ),
+                        ),
+                      );
                     },
-                    childCount: 4, // Fridge A, B, Freezer, Pantry
+                    childCount: fridges.length,
                   ),
                 );
               }()),
@@ -197,6 +252,62 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
             const SliverToBoxAdapter(child: SizedBox(height: 80)),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddFridgeDialog(context),
+        backgroundColor: colorsPrimary,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  void _showAddFridgeDialog(BuildContext context) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Add New Fridge/Cooler'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'e.g. Drink Display, Produce Cooler',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                Navigator.pop(dialogContext);
+                try {
+                  final newFridgeId = await ref.read(firebaseServicesProvider).createCustomFridge(name);
+                  // Make the newly created fridge active
+                  await ref.read(activeFridgeIdProvider.notifier).setActiveFridge(newFridgeId);
+                  
+                  if (!dialogContext.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Created fridge "$name"'),
+                      backgroundColor: colorsPrimary,
+                    ),
+                  );
+                } catch (e) {
+                  if (!dialogContext.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
       ),
     );
   }
@@ -270,71 +381,31 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
     );
   }
 
-  Map<String, dynamic>? _getFridgeData(
-    int index,
-    List<InventoryItem> allItems,
-  ) {
-    String title;
-    String subtitle;
-    List<InventoryItem> fridgeItems;
-    Color color;
+  Widget _buildFridgeCard({
+    required String id,
+    required String name,
+    required bool isActive,
+    required List<InventoryItem> items,
+  }) {
+    final int itemCount = items.length;
+    final int expiring = items.where((i) => i.status == 'Expiring Soon').length;
+    final int spoiled = items.where((i) => i.status == 'Spoiled').length;
 
-    if (index == 0) {
-      // Fridge A: Produce
-      title = "Fridge Section A";
-      subtitle = "Fruits & Veggies";
-      fridgeItems = allItems.where((i) => i.category == 'Produce').toList();
-      color = Colors.green.shade100;
-    } else if (index == 1) {
-      // Fridge B: Essentials
-      title = "Fridge Section B";
-      subtitle = "Meats & Dairy";
-      fridgeItems = allItems
-          .where((i) => i.category == 'Meat' || i.category == 'Dairy')
-          .toList();
-      color = Colors.blue.shade100;
-    } else if (index == 2) {
-      // Freezer
-      title = "Freezer";
-      subtitle = "Frozen Goods";
-      fridgeItems = allItems.where((i) => i.category == 'Frozen').toList();
-      color = Colors.cyan.shade100;
-    } else if (index == 3) {
-      // Pantry
-      title = "Pantry & Shelves";
-      subtitle = "Dry Goods & Beverages";
-      fridgeItems = allItems
-          .where((i) => i.category == 'Pantry' || i.category == 'Beverage' || i.category == 'Others')
-          .toList();
-      color = Colors.orange.shade100;
-    } else {
-      return null;
-    }
-
-    int itemCount = fridgeItems.length;
-    int expiring = fridgeItems.where((i) => i.status == 'Expiring Soon').length;
-    int spoiled = fridgeItems.where((i) => i.status == 'Spoiled').length;
-
-    // Only return if we want to show empty sections? Yes, to show potential storage.
-    return {
-      'title': title,
-      'subtitle': subtitle,
-      'itemCount': itemCount,
-      'expiring': expiring,
-      'spoiled': spoiled,
-      'color': color,
-      'items': fridgeItems,
-    };
-  }
-
-  Widget _buildFridgeCard(Map<String, dynamic> data) {
-    final List<InventoryItem> items = data['items'] as List<InventoryItem>;
+    final List<Color> colors = [
+      Colors.green.shade100,
+      Colors.blue.shade100,
+      Colors.cyan.shade100,
+      Colors.orange.shade100,
+      Colors.purple.shade100,
+    ];
+    final Color headerColor = colors[id.hashCode.abs() % colors.length];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: isActive ? Border.all(color: colorsPrimary, width: 2) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withValues(alpha: 0.1),
@@ -343,99 +414,143 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // Image / Header Section
-          Container(
-            height: 120,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: data['color'],
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () async {
+          await ref.read(activeFridgeIdProvider.notifier).setActiveFridge(id);
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Switched active storage to "$name"'),
+              backgroundColor: colorsPrimary,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        },
+        child: Column(
+          children: [
+            Container(
+              height: 120,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: headerColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(14),
+                ),
+              ),
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(14),
+                      ),
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.black.withValues(alpha: 0.6),
+                          Colors.transparent,
+                        ],
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 12,
+                    left: 16,
+                    right: 16,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isActive)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: colorsPrimary,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.check, color: Colors.white, size: 14),
+                                SizedBox(width: 4),
+                                Text(
+                                  "ACTIVE",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Stack(
-              children: [
-                // Gradient overlay
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16),
-                    ),
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.black.withValues(alpha: 0.6),
-                        Colors.transparent,
-                      ],
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 12,
-                  left: 16,
-                  child: Text(
-                    "${data['title']} - ${data['subtitle']}",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Stats Row
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildMiniStat(
-                      Icons.inventory_2_outlined,
-                      "${data['itemCount']} Items",
-                      Colors.black,
-                    ),
-                    _buildMiniStat(
-                      Icons.timer_outlined,
-                      "${data['expiring']} Expiring",
-                      statusExpiring,
-                    ),
-                    _buildMiniStat(
-                      Icons.cancel_outlined,
-                      "${data['spoiled']} Spoiled",
-                      statusSpoiled,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      _showFridgeContents(context, data['title'], items);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorsPrimary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildMiniStat(
+                        Icons.inventory_2_outlined,
+                        "$itemCount Items",
+                        Colors.black,
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text("View Details"),
+                      _buildMiniStat(
+                        Icons.timer_outlined,
+                        "$expiring Expiring",
+                        statusExpiring,
+                      ),
+                      _buildMiniStat(
+                        Icons.cancel_outlined,
+                        "$spoiled Spoiled",
+                        statusSpoiled,
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await ref.read(activeFridgeIdProvider.notifier).setActiveFridge(id);
+                        if (!mounted) return;
+                        _showFridgeContents(context, name, items);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorsPrimary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text("View Details"),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -464,13 +579,13 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
                     title,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const Divider(height: 1),
                 Expanded(
                   child: items.isEmpty
-                      ? Center(
+                      ? const Center(
                           child: Text(
                             "No items in this section",
                             style: TextStyle(color: Colors.grey),
@@ -518,7 +633,7 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.w600,
             fontSize: 13,

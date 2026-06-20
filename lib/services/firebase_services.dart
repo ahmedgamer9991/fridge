@@ -427,6 +427,58 @@ class FirebaseServices {
     }
   }
 
+  Future<String> createCustomFridge(String name, {String type = 'store'}) async {
+    final User? user = _auth.currentUser;
+    if (user == null) throw Exception('No authenticated user session found');
+
+    String userName = 'Owner';
+    try {
+      final profile = await getUserProfile();
+      if (profile != null && profile['name'] != null) {
+        userName = profile['name'];
+      }
+    } catch (_) {}
+
+    final DocumentReference docRef = await _firestore.collection('fridges').add({
+      'name': name,
+      'type': type,
+      'ownerId': user.uid,
+      'authorizedUsers': [user.uid],
+      'membersMetadata': {
+        user.uid: {
+          'name': userName,
+          'role': 'owner',
+        }
+      },
+      'status': 'online',
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    return docRef.id;
+  }
+
+  Stream<List<InventoryItem>> getItemsForFridge(String fridgeId) {
+    return _firestore
+        .collection('fridges')
+        .doc(fridgeId)
+        .collection('items')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            String status = _calculateStatus(data);
+            final userOverrides = Map<String, dynamic>.from(
+              data['userOverrides'] as Map<String, dynamic>? ?? {},
+            );
+            userOverrides['status'] = status;
+            final modelData = {...data, 'userOverrides': userOverrides};
+            return InventoryItem.fromMap(modelData, doc.id);
+          }).toList();
+        });
+  }
+
   Future<InventoryItem> getItem(String itemId) async {
     final User? user = _auth.currentUser;
     if (user == null) throw Exception('No authenticated user');
@@ -616,4 +668,28 @@ class FridgeNameNotifier extends StateNotifier<String> {
 final fridgeNameProvider = StateNotifierProvider<FridgeNameNotifier, String>((ref) {
   ref.watch(authChangesProvider);
   return FridgeNameNotifier(ref);
+});
+
+final userFridgesProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
+  final authState = ref.watch(authChangesProvider);
+  final user = authState.value;
+  if (user == null) return const Stream.empty();
+  
+  return FirebaseFirestore.instance
+      .collection('fridges')
+      .where('authorizedUsers', arrayContains: user.uid)
+      .snapshots()
+      .map((snapshot) {
+        return snapshot.docs.map((doc) {
+          final data = doc.data();
+          return {
+            'id': doc.id,
+            ...data,
+          };
+        }).toList();
+      });
+});
+
+final fridgeItemsProvider = StreamProvider.family<List<InventoryItem>, String>((ref, fridgeId) {
+  return ref.watch(firebaseServicesProvider).getItemsForFridge(fridgeId);
 });
