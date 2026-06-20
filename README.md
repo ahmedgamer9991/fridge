@@ -11,7 +11,6 @@ Organize your items into four main dedicated sections:
 - **Produce**: Keep track of fresh fruits and vegetables.
 - **Essentials**: Manage meats, dairy, and daily necessities.
 - **Frozen**: Monitor items in your freezer.
-- **Pantry**: Track dry goods, beverages, and shelf-stable items.
 
 ### 🔔 Intelligent Alerts
 

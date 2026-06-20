@@ -1,4 +1,4 @@
 class ApiConfig {
-  static const String spoonacularApiKey = '2641adca2a5d428b8daf0bea2c5477fd';
+  static const String spoonacularApiKey = 'c4e23102f8274f56bef4d8f1c96683ba';
   static const String baseUrl = 'https://api.spoonacular.com';
 }

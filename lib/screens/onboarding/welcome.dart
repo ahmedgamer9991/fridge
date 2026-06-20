@@ -34,7 +34,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Our Motto',
+                    'Connect, Share, and Inspire',
                     style: TextStyle(
                       fontSize: 16,
                       color: colorsSecondary,

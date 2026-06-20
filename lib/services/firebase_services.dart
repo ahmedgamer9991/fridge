@@ -272,16 +272,17 @@ class FirebaseServices {
 
     try {
       final fridgeId = await getActiveFridgeId();
+      final trimmedName = newName.trim();
       
       // Update in Firestore
       await _firestore.collection('fridges').doc(fridgeId).update({
-        'name': newName,
+        'name': trimmedName,
         'updatedAt': FieldValue.serverTimestamp(),
       });
       
       // Update in local SharedPreferences
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('fridge_name_${user.uid}', newName);
+      await prefs.setString('fridge_name_${user.uid}', trimmedName);
     } catch (e) {
       throw Exception('Failed to update fridge name: $e');
     }

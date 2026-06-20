@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Eyeventory/models/recipe_models.dart';
 import 'package:Eyeventory/services/recipe_service.dart';
 import 'package:Eyeventory/services/grocery_provider.dart';
+import 'package:Eyeventory/services/favorites_provider.dart';
 import 'package:Eyeventory/utils/constants.dart';
 
 class RecipeDetailsScreen extends ConsumerWidget {
@@ -25,6 +26,8 @@ class RecipeDetailsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detailsAsync = ref.watch(recipeDetailsProvider(recipeId));
+    final favoriteRecipes = ref.watch(favoritesProvider);
+    final isFav = favoriteRecipes.any((e) => e.id == recipeId);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -54,6 +57,46 @@ class RecipeDetailsScreen extends ConsumerWidget {
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
+                actions: [
+                  Container(
+                    margin: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Colors.white24,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        isFav ? Icons.favorite : Icons.favorite_border,
+                        color: isFav ? Colors.red : Colors.white,
+                      ),
+                      onPressed: () {
+                        if (isFav) {
+                          final existing = favoriteRecipes.firstWhere((e) => e.id == recipeId);
+                          ref.read(favoritesProvider.notifier).toggleFavorite(existing);
+                        } else {
+                          final usedIngredients = recipe.ingredients
+                              .where((i) => i.isInFridge)
+                              .map((i) => i.name)
+                              .toList();
+                          final missedIngredients = recipe.ingredients
+                              .where((i) => !i.isInFridge)
+                              .map((i) => i.name)
+                              .toList();
+                          final spoonRecipe = SpoonacularRecipe(
+                            id: recipe.id,
+                            title: recipe.title,
+                            image: recipe.image,
+                            usedIngredientCount: usedIngredients.length,
+                            missedIngredientCount: missedIngredients.length,
+                            usedIngredients: usedIngredients,
+                            missedIngredients: missedIngredients,
+                          );
+                          ref.read(favoritesProvider.notifier).toggleFavorite(spoonRecipe);
+                        }
+                      },
+                    ),
+                  ),
+                ],
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
                     fit: StackFit.expand,

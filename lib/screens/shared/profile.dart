@@ -203,7 +203,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       focusNode: _focusNode2,
                       onChanged: (value) {
                         if (value.trim().isNotEmpty) {
-                          ref.read(fridgeNameProvider.notifier).updateName(value.trim());
+                          ref.read(fridgeNameProvider.notifier).updateName(value);
                         }
                       },
                     );

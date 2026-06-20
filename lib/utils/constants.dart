@@ -29,7 +29,6 @@ const List<String> itemCategories = [
   'Dairy',
   'Meat',
   'Frozen',
-  'Pantry',
   'Beverage',
   'Others',
 ];
