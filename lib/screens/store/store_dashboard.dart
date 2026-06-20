@@ -53,7 +53,7 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
     });
   }
 
-  String _getAppBarTitle() {
+  String _getAppBarTitle(String storeName) {
     if (_isSearching) {
       return 'Searching...';
     }
@@ -63,7 +63,7 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
           .key;
       return 'Showing: $filterName';
     }
-    return 'My Store';
+    return storeName;
   }
 
   @override
@@ -71,10 +71,11 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
     final inventoryAsync = ref.watch(inventoryItemsProvider);
     final allItems = inventoryAsync.value ?? [];
     final isLoading = inventoryAsync.isLoading && allItems.isEmpty;
+    final fridgeName = ref.watch(fridgeNameProvider);
 
     return Scaffold(
       appBar: AppHeader(
-        title: _getAppBarTitle(),
+        title: _getAppBarTitle(fridgeName),
         automaticallyImplyLeading: false,
         actions: [
           if (_selectedCategory != 'All')

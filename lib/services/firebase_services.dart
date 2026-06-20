@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Eyeventory/core/errors/exceptions.dart';
@@ -576,6 +577,8 @@ final inventoryItemByIdProvider = Provider.family<InventoryItem?, String>((ref, 
 
 class FridgeNameNotifier extends StateNotifier<String> {
   final Ref ref;
+  Timer? _debounceTimer;
+
   FridgeNameNotifier(this.ref) : super('My Home Fridge') {
     _init();
   }
@@ -587,9 +590,26 @@ class FridgeNameNotifier extends StateNotifier<String> {
     } catch (_) {}
   }
 
-  Future<void> updateName(String newName) async {
-    await ref.read(firebaseServicesProvider).updateFridgeName(newName);
+  void updateName(String newName) {
+    // 1. Update state immediately (optimistic UI update) so local widgets update instantly
     state = newName;
+
+    // 2. Debounce the network/database write to Firestore
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 600), () async {
+      try {
+        await ref.read(firebaseServicesProvider).updateFridgeName(newName);
+      } catch (e) {
+        // Silent error fallback or logging
+        // debugPrint('Failed to save fridge name to Firestore: $e');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
   }
 }
 

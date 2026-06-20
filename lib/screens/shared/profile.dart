@@ -192,18 +192,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         setState(() => _selectedLanguage = value!),
                   ),
                   const Divider(thickness: .5, indent: 15, endIndent: 15),
-                  ProfileTextFieldTile(
-                    title: 'Fridge Name',
-                    description:
-                        'Customize the name displayed for your fridge.',
-                    controller: _fridgeNameController,
-                    focusNode: _focusNode2,
-                    onChanged: (value) {
-                      if (value.trim().isNotEmpty) {
-                        ref.read(fridgeNameProvider.notifier).updateName(value.trim());
-                      }
-                    },
-                  ),
+                  (() {
+                    final isStoreUser = userProfile?['role'] == 'store';
+                    return ProfileTextFieldTile(
+                      title: isStoreUser ? 'Store Name' : 'Fridge Name',
+                      description: isStoreUser
+                          ? 'Customize the name displayed for your store.'
+                          : 'Customize the name displayed for your fridge.',
+                      controller: _fridgeNameController,
+                      focusNode: _focusNode2,
+                      onChanged: (value) {
+                        if (value.trim().isNotEmpty) {
+                          ref.read(fridgeNameProvider.notifier).updateName(value.trim());
+                        }
+                      },
+                    );
+                  })(),
                 ],
               ),
 
