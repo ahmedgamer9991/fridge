@@ -246,7 +246,7 @@ class FirebaseServices {
   Future<String> createDefaultFridgeForUser(String userId, String userName, {String role = 'home'}) async {
     final prefs = await SharedPreferences.getInstance();
     final DocumentReference docRef = await _firestore.collection('fridges').add({
-      'name': role == 'store' ? 'My Store' : 'My Fridge',
+      'name': role == 'store' ? 'Main Cooler' : 'My Fridge',
       'type': role,
       'ownerId': userId,
       'authorizedUsers': [userId],
@@ -282,7 +282,7 @@ class FirebaseServices {
       
       // Update in local SharedPreferences
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('fridge_name_${user.uid}', trimmedName);
+      await prefs.setString('fridge_name_$fridgeId', trimmedName);
     } catch (e) {
       throw Exception('Failed to update fridge name: $e');
     }
@@ -293,25 +293,27 @@ class FirebaseServices {
     if (user == null) return 'My Fridge';
 
     try {
+      final fridgeId = await getActiveFridgeId();
       // Try local SharedPreferences first
       final prefs = await SharedPreferences.getInstance();
-      final localName = prefs.getString('fridge_name_${user.uid}');
+      final localName = prefs.getString('fridge_name_$fridgeId');
       if (localName != null) return localName;
 
       // Otherwise, fetch from Firestore
-      final fridgeId = await getActiveFridgeId();
       final doc = await _firestore.collection('fridges').doc(fridgeId).get();
       if (doc.exists) {
         final data = doc.data();
         final name = data?['name'] as String?;
         if (name != null) {
           // Cache it locally
-          await prefs.setString('fridge_name_${user.uid}', name);
+          await prefs.setString('fridge_name_$fridgeId', name);
           return name;
         }
       }
-    } catch (_) {}
-    return 'My Fridge';
+      return 'My Fridge';
+    } catch (e) {
+      return 'My Fridge';
+    }
   }
 
   Future<String> addItem({
@@ -668,6 +670,7 @@ class FridgeNameNotifier extends StateNotifier<String> {
 
 final fridgeNameProvider = StateNotifierProvider<FridgeNameNotifier, String>((ref) {
   ref.watch(authChangesProvider);
+  ref.watch(activeFridgeIdProvider);
   return FridgeNameNotifier(ref);
 });
 
@@ -693,4 +696,53 @@ final userFridgesProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
 
 final fridgeItemsProvider = StreamProvider.family<List<InventoryItem>, String>((ref, fridgeId) {
   return ref.watch(firebaseServicesProvider).getItemsForFridge(fridgeId);
+});
+
+class StoreNameNotifier extends StateNotifier<String> {
+  final Ref ref;
+
+  StoreNameNotifier(this.ref) : super('My Store') {
+    _init();
+  }
+
+  Future<void> _init() async {
+    try {
+      final user = ref.read(authChangesProvider).value;
+      if (user != null) {
+        final prefs = await SharedPreferences.getInstance();
+        final localName = prefs.getString('store_name_${user.uid}');
+        if (localName != null) {
+          state = localName;
+          return;
+        }
+
+        final profile = await ref.read(firebaseServicesProvider).getUserProfile();
+        if (profile != null && profile['storeName'] != null) {
+          final sName = profile['storeName'] as String;
+          state = sName;
+          await prefs.setString('store_name_${user.uid}', sName);
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> updateStoreName(String newName) async {
+    state = newName;
+    try {
+      final user = ref.read(authChangesProvider).value;
+      if (user != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('store_name_${user.uid}', newName);
+        await ref.read(firebaseServicesProvider).updateUserProfile({
+          'storeName': newName.trim(),
+        });
+        ref.invalidate(userProfileProvider);
+      }
+    } catch (_) {}
+  }
+}
+
+final storeNameProvider = StateNotifierProvider<StoreNameNotifier, String>((ref) {
+  ref.watch(authChangesProvider);
+  return StoreNameNotifier(ref);
 });

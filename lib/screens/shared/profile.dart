@@ -65,7 +65,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.initState();
     _loadUserProfile();
     _restockingController.text = '$_restockingThreshold';
-    _fridgeNameController.text = ref.read(fridgeNameProvider);
+    
+    final profile = ref.read(userProfileProvider).value;
+    final isStore = profile?['role'] == 'store';
+    _fridgeNameController.text = isStore 
+        ? ref.read(storeNameProvider) 
+        : ref.read(fridgeNameProvider);
   }
 
   @override
@@ -81,8 +86,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(userProfileProvider);
     final userProfile = profileAsync.value;
+    final isStoreUser = userProfile?['role'] == 'store';
 
-    ref.listen<String>(fridgeNameProvider, (previous, next) {
+    // Synchronize initial text when profile loads
+    if (userProfile != null) {
+      final expectedName = isStoreUser ? ref.watch(storeNameProvider) : ref.watch(fridgeNameProvider);
+      if (!_focusNode2.hasFocus && _fridgeNameController.text != expectedName) {
+        _fridgeNameController.text = expectedName;
+      }
+    }
+
+    ref.listen<String>(isStoreUser ? storeNameProvider : fridgeNameProvider, (previous, next) {
       if (_fridgeNameController.text != next) {
         _fridgeNameController.text = next;
       }
@@ -203,7 +217,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       focusNode: _focusNode2,
                       onChanged: (value) {
                         if (value.trim().isNotEmpty) {
-                          ref.read(fridgeNameProvider.notifier).updateName(value);
+                          if (isStoreUser) {
+                            ref.read(storeNameProvider.notifier).updateStoreName(value);
+                          } else {
+                            ref.read(fridgeNameProvider.notifier).updateName(value);
+                          }
                         }
                       },
                     );

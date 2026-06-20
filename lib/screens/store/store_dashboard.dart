@@ -1,12 +1,12 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Eyeventory/services/firebase_services.dart';
 import 'package:Eyeventory/utils/constants.dart';
-import 'package:Eyeventory/utils/helpers.dart';
 import 'package:Eyeventory/widgets/widgets.dart';
+import 'package:Eyeventory/utils/helpers.dart';
 import 'package:Eyeventory/models/inventory_item.dart';
+import 'package:Eyeventory/screens/store/store_fridge_inventory.dart';
 
 class StoreDashboard extends ConsumerStatefulWidget {
   const StoreDashboard({super.key});
@@ -18,7 +18,6 @@ class StoreDashboard extends ConsumerStatefulWidget {
 class _StoreDashboardState extends ConsumerState<StoreDashboard> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  String _selectedCategory = 'All';
   String _selectedStatFilter = 'all';
   Timer? _debounce;
   bool _isSearching = false;
@@ -29,11 +28,6 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
     'Low Stock': 'low_stock',
     'Spoiled/Expired': 'spoiled',
   };
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   void dispose() {
@@ -57,40 +51,58 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
     if (_isSearching) {
       return 'Searching...';
     }
-    if (_selectedStatFilter != 'all') {
-      final filterName = _statFilterMap.entries
-          .firstWhere((e) => e.value == _selectedStatFilter)
-          .key;
-      return 'Showing: $filterName';
-    }
     return storeName;
   }
 
   @override
   Widget build(BuildContext context) {
     final fridgesAsync = ref.watch(userFridgesProvider);
-    final activeFridgeIdAsync = ref.watch(activeFridgeIdProvider);
-    final activeFridgeId = activeFridgeIdAsync.value;
-    final fridgeName = ref.watch(fridgeNameProvider);
+    final storeName = ref.watch(storeNameProvider);
+
+    // 1. Gather all fridges to calculate combined stats and perform filtering
+    final fridges = fridgesAsync.value ?? [];
+    final List<InventoryItem> allItems = [];
+
+    // Dynamically watch each fridge's items to compute combined stats and filter reactively
+    for (final fridge in fridges) {
+      final fridgeId = fridge['id'] as String;
+      final itemsAsync = ref.watch(fridgeItemsProvider(fridgeId));
+      final items = itemsAsync.value ?? [];
+      allItems.addAll(items);
+    }
+
+    final searchQuery = _searchController.text.toLowerCase().trim();
+
+    // Check if a cooler card should be shown based on search query
+    bool matchesFridge(String fridgeName, List<InventoryItem> items) {
+      // Apply Search Query only
+      if (searchQuery.isEmpty) return true;
+
+      final matchesFridgeName = fridgeName.toLowerCase().contains(searchQuery);
+      final matchesItemName = items.any((i) =>
+          i.name.toLowerCase().contains(searchQuery) ||
+          i.category.toLowerCase().contains(searchQuery));
+
+      return matchesFridgeName || matchesItemName;
+    }
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppHeader(
-        title: _getAppBarTitle(fridgeName),
+        title: _getAppBarTitle(storeName),
         automaticallyImplyLeading: false,
         actions: [
-          if (_selectedCategory != 'All')
+          if (searchQuery.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.filter_alt_off, color: Colors.grey),
               onPressed: () {
                 setState(() {
-                  _selectedStatFilter = 'all'; // Keep this reset just in case
-                  _selectedCategory = 'All';
                   _searchController.clear();
                   _isSearching = false;
                 });
                 _focusNode.unfocus();
               },
-              tooltip: 'Clear category filter',
+              tooltip: 'Clear search',
             ),
           if (_isSearching)
             IconButton(
@@ -110,39 +122,20 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
           slivers: [
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-            // 1. Stats Grid (Dependant on Data)
+            // 1. Combined Stats Grid (Dependant on Data)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: fridgesAsync.when(
-                  data: (fridges) {
-                    if (activeFridgeId != null) {
-                      final itemsAsync = ref.watch(fridgeItemsProvider(activeFridgeId));
-                      final items = itemsAsync.value ?? [];
-                      return StatsGrid(
-                        items: items,
-                        selectedFilterKey: _selectedStatFilter,
-                        onFilterSelected: (key) {
-                          setState(() {
-                            _selectedStatFilter = key;
-                            _selectedCategory = 'All';
-                          });
-                        },
-                      );
-                    }
-                    return const StatsGrid(items: []);
-                  },
-                  loading: () => const SizedBox(
-                    height: 100,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                  error: (err, stack) => const StatsGrid(items: []),
+                child: StatsGrid(
+                  items: allItems,
+                  selectedFilterKey: 'all',
+                  onFilterSelected: null,
                 ),
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-            // 2. Search Bar (Static - Always Visible)
+            // 2. Search Bar
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -162,88 +155,69 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-            // 3. Categories (Static - Always Visible)
-            SliverToBoxAdapter(child: _buildCategories()),
-            const SliverToBoxAdapter(child: SizedBox(height: 12)),
-
-            // 4. Fridge list (Dependant on Data)
+            // 3. Fridge List
             if (fridgesAsync.isLoading)
               const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator()),
               )
             else ...[
               (() {
-                final fridges = fridgesAsync.value ?? [];
-                
-                if (fridges.isEmpty) {
-                  return const SliverToBoxAdapter(
+                final filteredFridges = fridges.where((fridge) {
+                  final fridgeId = fridge['id'] as String;
+                  final fridgeName = fridge['name'] as String? ?? 'Unnamed Fridge';
+                  final itemsAsync = ref.watch(fridgeItemsProvider(fridgeId));
+                  final items = itemsAsync.value ?? [];
+                  return matchesFridge(fridgeName, items);
+                }).toList();
+
+                if (filteredFridges.isEmpty) {
+                  return SliverToBoxAdapter(
                     child: Padding(
-                      padding: EdgeInsets.only(top: 40),
+                      padding: const EdgeInsets.only(top: 40),
                       child: Column(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.kitchen_outlined,
                             size: 48,
                             color: Colors.grey,
                           ),
-                          SizedBox(height: 16),
-                          Text("No Fridges or Coolers Found"),
-                          SizedBox(height: 8),
-                          Text("Add a new fridge/cooler using the + button", style: TextStyle(color: Colors.grey)),
+                          const SizedBox(height: 16),
+                          Text(
+                            searchQuery.isNotEmpty || _selectedStatFilter != 'all'
+                                ? "No matching coolers found"
+                                : "No Fridges or Coolers Found",
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            searchQuery.isNotEmpty || _selectedStatFilter != 'all'
+                                ? "Try clearing search or filters"
+                                : "Add a new fridge/cooler using the + button",
+                            style: const TextStyle(color: Colors.grey),
+                          ),
                         ],
                       ),
                     ),
                   );
                 }
 
-                final searchQuery = _searchController.text.toLowerCase().trim();
-
                 return SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      final fridge = fridges[index];
+                      final fridge = filteredFridges[index];
                       final fridgeId = fridge['id'] as String;
                       final fridgeName = fridge['name'] as String? ?? 'Unnamed Fridge';
-                      final isActive = activeFridgeId == fridgeId;
 
                       final itemsAsync = ref.watch(fridgeItemsProvider(fridgeId));
-                      return itemsAsync.when(
-                        data: (items) {
-                          final filteredItems = _filterItems(items);
-                          
-                          final matchesCategoryFilter = _selectedCategory == 'All' || items.any((i) => i.category == _selectedCategory);
-                          final matchesQuery = searchQuery.isEmpty || 
-                                               fridgeName.toLowerCase().contains(searchQuery) || 
-                                               items.any((i) => i.name.toLowerCase().contains(searchQuery));
+                      final items = itemsAsync.value ?? [];
 
-                          if (!matchesCategoryFilter || !matchesQuery) {
-                            return const SizedBox.shrink();
-                          }
-
-                          return _buildFridgeCard(
-                            id: fridgeId,
-                            name: fridgeName,
-                            isActive: isActive,
-                            items: filteredItems,
-                          );
-                        },
-                        loading: () => const Card(
-                          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: SizedBox(
-                            height: 100,
-                            child: Center(child: CircularProgressIndicator()),
-                          ),
-                        ),
-                        error: (err, stack) => Card(
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: ListTile(
-                            title: Text('Error loading $fridgeName'),
-                            subtitle: Text(err.toString()),
-                          ),
-                        ),
+                      return _buildFridgeCard(
+                        id: fridgeId,
+                        name: fridgeName,
+                        items: items,
                       );
                     },
-                    childCount: fridges.length,
+                    childCount: filteredFridges.length,
                   ),
                 );
               }()),
@@ -262,129 +236,9 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
     );
   }
 
-  void _showAddFridgeDialog(BuildContext context) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Add New Fridge/Cooler'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'e.g. Drink Display, Produce Cooler',
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final name = controller.text.trim();
-              if (name.isNotEmpty) {
-                Navigator.pop(dialogContext);
-                try {
-                  final newFridgeId = await ref.read(firebaseServicesProvider).createCustomFridge(name);
-                  // Make the newly created fridge active
-                  await ref.read(activeFridgeIdProvider.notifier).setActiveFridge(newFridgeId);
-                  
-                  if (!dialogContext.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Created fridge "$name"'),
-                      backgroundColor: colorsPrimary,
-                    ),
-                  );
-                } catch (e) {
-                  if (!dialogContext.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-                  );
-                }
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<InventoryItem> _filterItems(List<InventoryItem> items) {
-    if (_searchController.text.isEmpty &&
-        _selectedCategory == 'All' &&
-        _selectedStatFilter == 'all') {
-      return items;
-    }
-
-    final query = _searchController.text.toLowerCase();
-    return items.where((item) {
-      final matchesQuery =
-          query.isEmpty ||
-          item.name.toLowerCase().contains(query) ||
-          item.category.toLowerCase().contains(query);
-
-      final matchesCategory =
-          _selectedCategory == 'All' || item.category == _selectedCategory;
-
-      final matchesStat =
-          _selectedStatFilter == 'all' ||
-          (_selectedStatFilter == 'expiring' &&
-              item.status == 'Expiring Soon') ||
-          (_selectedStatFilter == 'spoiled' && item.status == 'Spoiled') ||
-          (_selectedStatFilter == 'low_stock' && AppHelpers.isLowStock(item));
-
-      return matchesQuery && matchesCategory && matchesStat;
-    }).toList();
-  }
-
-  Widget _buildCategories() {
-    final categories = ['All', ...itemCategories];
-
-    return SizedBox(
-      height: 40,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
-          final category = categories[index];
-          final isSelected = _selectedCategory == category;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: OutlinedButton(
-              onPressed: () => setState(() => _selectedCategory = category),
-              style: OutlinedButton.styleFrom(
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                backgroundColor: isSelected ? Colors.green[50] : Colors.white,
-                side: BorderSide(
-                  color: isSelected ? const Color(0xFFE8F5E9) : colorsBorder,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                foregroundColor: isSelected ? colorsPrimary : Colors.black,
-              ),
-              child: Text(category, style: const TextStyle(fontSize: 14)),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   Widget _buildFridgeCard({
     required String id,
     required String name,
-    required bool isActive,
     required List<InventoryItem> items,
   }) {
     final int itemCount = items.length;
@@ -405,10 +259,9 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: isActive ? Border.all(color: colorsPrimary, width: 2) : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: Colors.grey.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -416,14 +269,14 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () async {
-          await ref.read(activeFridgeIdProvider.notifier).setActiveFridge(id);
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Switched active storage to "$name"'),
-              backgroundColor: colorsPrimary,
-              duration: const Duration(seconds: 2),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => StoreFridgeInventoryScreen(
+                fridgeId: id,
+                initialFridgeName: name,
+              ),
             ),
           );
         },
@@ -447,7 +300,7 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
                       ),
                       gradient: LinearGradient(
                         colors: [
-                          Colors.black.withValues(alpha: 0.6),
+                          Colors.black.withOpacity(0.6),
                           Colors.transparent,
                         ],
                         begin: Alignment.bottomCenter,
@@ -459,44 +312,15 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
                     bottom: 12,
                     left: 16,
                     right: 16,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (isActive)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: colorsPrimary,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.check, color: Colors.white, size: 14),
-                                SizedBox(width: 4),
-                                Text(
-                                  "ACTIVE",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                      ],
+                    child: Text(
+                      name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -530,10 +354,16 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () async {
-                        await ref.read(activeFridgeIdProvider.notifier).setActiveFridge(id);
-                        if (!mounted) return;
-                        _showFridgeContents(context, name, items);
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => StoreFridgeInventoryScreen(
+                              fridgeId: id,
+                              initialFridgeName: name,
+                            ),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: colorsPrimary,
@@ -555,74 +385,50 @@ class _StoreDashboardState extends ConsumerState<StoreDashboard> {
     );
   }
 
-  void _showFridgeContents(
-    BuildContext context,
-    String title,
-    List<InventoryItem> items,
-  ) {
-    showModalBottomSheet(
+  void _showAddFridgeDialog(BuildContext context) {
+    final controller = TextEditingController();
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Add New Fridge/Cooler'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'e.g. Drink Display, Produce Cooler',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                Navigator.pop(dialogContext);
+                try {
+                  await ref.read(firebaseServicesProvider).createCustomFridge(name);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Created fridge "$name"'),
+                      backgroundColor: colorsPrimary,
+                    ),
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
       ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          minChildSize: 0.4,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    title,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const Divider(height: 1),
-                Expanded(
-                  child: items.isEmpty
-                      ? const Center(
-                          child: Text(
-                            "No items in this section",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        )
-                      : ListView.builder(
-                          controller: scrollController,
-                          itemCount: items.length,
-                          itemBuilder: (context, index) {
-                            final item = items[index];
-                            return InventoryItemCard(
-                              title: item.name,
-                              subtitle: '${item.quantity} ${item.unit}',
-                              status: item.status,
-                              statusColor: AppHelpers.getStatusColor(
-                                item.status,
-                              ),
-                              expiryText: AppHelpers.formatExpiryDate(
-                                item.expiryDate,
-                              ),
-                              onTap: () {
-                                Navigator.pop(context); // Close sheet
-                                Navigator.pushNamed(
-                                  context,
-                                  '/item-details',
-                                  arguments: item.id,
-                                );
-                              },
-                            );
-                          },
-                        ),
-                ),
-              ],
-            );
-          },
-        );
-      },
     );
   }
 
